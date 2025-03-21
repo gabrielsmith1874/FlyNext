@@ -1,0 +1,1602 @@
+{
+	"info": {
+		"_postman_id": "ebcafb30-5083-48f5-9af5-4224c9f8f5aa",
+		"name": "FlyNext API Collection",
+		"description": "A collection of API endpoints for the FlyNext flight and hotel booking platform",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42830457"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"userToken\", pm.response.json().token);",
+									"    console.log(\"User registration successful!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securePassword123\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phone\": \"+1234567890\",\n    \"passportId\": \"123456789\",\n    \"role\": \"USER\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user account"
+					},
+					"response": []
+				},
+				{
+					"name": "Register Hotel Owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"hotelOwnerToken\", pm.response.json().token);",
+									"    console.log(\"Hotel owner registration successful!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"owner@example.com\",\n    \"password\": \"securePassword123\",\n    \"firstName\": \"Hotel\",\n    \"lastName\": \"Owner\",\n    \"phone\": \"+1234567890\",\n    \"passportId\": \"987654321\",\n    \"role\": \"HOTEL_OWNER\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new hotel owner account"
+					},
+					"response": []
+				},
+				{
+					"name": "Register Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"adminToken\", pm.response.json().token);",
+									"    console.log(\"Admin registration successful!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"securePassword123\",\n    \"firstName\": \"Admin\",\n    \"lastName\": \"User\",\n    \"phone\": \"+1234567890\",\n    \"passportId\": \"123123123\",\n    \"role\": \"ADMIN\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new admin account"
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set(\"userToken\", pm.response.json().token);",
+									"    console.log(\"User login successful!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securePassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as regular user"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Hotel Owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set(\"hotelOwnerToken\", pm.response.json().token);",
+									"    console.log(\"Hotel owner login successful!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"owner@example.com\",\n    \"password\": \"securePassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as hotel owner"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set(\"adminToken\", pm.response.json().token);",
+									"    console.log(\"Admin login successful!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"securePassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as admin"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Get the current user's profile"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"Updated\",\n    \"lastName\": \"Name\",\n    \"phone\": \"+9876543210\",\n    \"profilePicture\": \"https://example.com/profile.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Update the current user's profile information"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints related to user authentication and profile management"
+		},
+		{
+			"name": "Flight Management",
+			"item": [
+				{
+					"name": "Get Cities",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cities",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cities"
+							]
+						},
+						"description": "Get all available cities"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Airports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/airports",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"airports"
+							]
+						},
+						"description": "Get all available airports"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Airlines",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/airlines",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"airlines"
+							]
+						},
+						"description": "Get all available airlines"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Flights",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/flights/search?from=Toronto&to=Zurich&date=2024-11-17",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"flights",
+								"search"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "Toronto"
+								},
+								{
+									"key": "to",
+									"value": "Zurich"
+								},
+								{
+									"key": "date",
+									"value": "2024-11-17"
+								}
+							]
+						},
+						"description": "Search for flights based on origin, destination, and date"
+					},
+					"response": []
+				},
+				{
+					"name": "Book Flight",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"bookingId\", pm.response.json().id);",
+									"    console.log(\"Flight booking successful!\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"Updated\",\n    \"lastName\": \"Name\",\n    \"email\": \"user@example.com\",\n    \"passportNumber\": \"123456789\",\n    \"flightIds\": [\"flight123\", \"flight456\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
+						},
+						"description": "Book flights"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints related to flight search and booking"
+		},
+		{
+			"name": "Hotel Management",
+			"item": [
+				{
+					"name": "Get Hotels",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/hotels?cityId=toronto-canada&minRating=4&maxPrice=300&amenities=WiFi",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"hotels"
+							],
+							"query": [
+								{
+									"key": "cityId",
+									"value": "toronto-canada"
+								},
+								{
+									"key": "minRating",
+									"value": "4"
+								},
+								{
+									"key": "maxPrice",
+									"value": "300"
+								},
+								{
+									"key": "amenities",
+									"value": "WiFi"
+								},
+								{
+									"key": "name",
+									"value": "Grand",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get hotels with optional filters"
+					},
+					"response": []
+				},
+				{
+				  "name": "Create Hotel",
+				  "event": [
+					{
+					  "listen": "prerequest",
+					  "script": {
+						"exec": [
+						  "// First, register a hotel owner if not already registered",
+						  "if (!pm.collectionVariables.get(\"hotelOwnerToken\")) {",
+						  "    console.log(\"No hotel owner token found. Registering a new hotel owner...\");",
+						  "    ",
+						  "    pm.sendRequest({",
+						  "        url: pm.variables.get(\"baseUrl\") + \"/api/auth/register\",",
+						  "        method: \"POST\",",
+						  "        header: {",
+						  "            \"Content-Type\": \"application/json\"",
+						  "        },",
+						  "        body: {",
+						  "            mode: \"raw\",",
+						  "            raw: JSON.stringify({",
+						  "                \"email\": \"owner\" + new Date().getTime() + \"@example.com\",",
+						  "                \"password\": \"securePassword123\",",
+						  "                \"firstName\": \"Hotel\",",
+						  "                \"lastName\": \"Owner\",",
+						  "                \"phone\": \"+1234567890\",",
+						  "                \"passportId\": \"HOT\" + new Date().getTime(),",
+						  "                \"role\": \"HOTEL_OWNER\"",
+						  "            })",
+						  "        }",
+						  "    }, function (err, res) {",
+						  "        if (!err && res.code === 201) {",
+						  "            const token = res.json().token;",
+						  "            pm.collectionVariables.set(\"hotelOwnerToken\", token);",
+						  "            console.log(\"Hotel owner registered successfully! Token obtained.\");",
+						  "            ",
+						  "            // After registration, get the owner's profile to extract owner ID",
+						  "            getOwnerProfile();",
+						  "        } else {",
+						  "            console.error(\"Failed to register hotel owner:\", err || res.json());",
+						  "        }",
+						  "    });",
+						  "} else {",
+						  "    // If token exists, just get owner profile",
+						  "    getOwnerProfile();",
+						  "}",
+						  "",
+						  "// Function to get owner profile and extract ownerId",
+						  "function getOwnerProfile() {",
+						  "    pm.sendRequest({",
+						  "        url: pm.variables.get(\"baseUrl\") + \"/api/auth/profile\",",
+						  "        method: \"GET\",",
+						  "        header: {",
+						  "            \"Authorization\": \"Bearer \" + pm.collectionVariables.get(\"hotelOwnerToken\")",
+						  "        }",
+						  "    }, function (err, res) {",
+						  "        if (!err && res.code === 200) {",
+						  "            const profile = res.json();",
+						  "            pm.collectionVariables.set(\"ownerId\", profile.id);",
+						  "            console.log(\"Set ownerId to: \" + profile.id);",
+						  "        } else {",
+						  "            console.error(\"Failed to get owner profile:\", err || res.text);",
+						  "        }",
+						  "    });",
+						  "}",
+						  "",
+						  "// Get available cities for cityId",
+						  "pm.sendRequest({",
+						  "    url: pm.variables.get(\"baseUrl\") + \"/api/cities\",",
+						  "    method: \"GET\",",
+						  "    header: {",
+						  "        \"Content-Type\": \"application/json\"",
+						  "    }",
+						  "}, function (err, res) {",
+						  "    if (!err && res.code === 200) {",
+						  "        const cities = res.json();",
+						  "        if (cities && cities.length > 0) {",
+						  "            pm.collectionVariables.set(\"cityId\", cities[0].id);",
+						  "            console.log(\"Set cityId to: \" + cities[0].id);",
+						  "        } else {",
+						  "            // Use default cityId if no cities are returned",
+						  "            pm.collectionVariables.set(\"cityId\", \"7b9694f5-d606-419d-84e1-68b38994978e\");",
+						  "            console.log(\"No cities found, using default cityId\");",
+						  "        }",
+						  "    } else {",
+						  "        // Use default cityId if request fails",
+						  "        pm.collectionVariables.set(\"cityId\", \"7b9694f5-d606-419d-84e1-68b38994978e\");",
+						  "        console.log(\"Failed to get cities, using default cityId\");",
+						  "    }",
+						  "});"
+						],
+						"type": "text/javascript"
+					  }
+					},
+					{
+					  "listen": "test",
+					  "script": {
+						"exec": [
+						  "if (pm.response.code === 201) {",
+						  "    pm.collectionVariables.set(\"hotelId\", pm.response.json().id);",
+						  "    console.log(\"Hotel created successfully with ID: \" + pm.response.json().id);",
+						  "} else {",
+						  "    console.error(\"Failed to create hotel: \" + pm.response.text());",
+						  "}"
+						],
+						"type": "text/javascript"
+					  }
+					}
+				  ],
+				  "request": {
+					"method": "POST",
+					"header": [
+					  {
+						"key": "Authorization",
+						"value": "Bearer {{hotelOwnerToken}}"
+					  },
+					  {
+						"key": "Content-Type",
+						"value": "application/json"
+					  }
+					],
+					"body": {
+					  "mode": "raw",
+					  "raw": "{\n    \"name\": \"Grand Hotel\",\n    \"description\": \"A luxurious 5-star hotel in the heart of downtown\",\n    \"address\": \"123 Main Street\",\n    \"ownerId\": \"{{ownerId}}\",\n    \"cityId\": \"{{cityId}}\",\n    \"country\": \"Canada\",\n    \"postalCode\": \"M5V 2T6\",\n    \"images\": [\n        {\n            \"url\": \"https://example.com/hotel-image1.jpg\",\n            \"caption\": \"Hotel Exterior\"\n        },\n        {\n            \"url\": \"https://example.com/hotel-image2.jpg\",\n            \"caption\": \"Lobby View\"\n        }\n    ],\n    \"rating\": 4.5,\n    \"amenities\": \"WiFi, Pool, Spa, Restaurant, Room Service\",\n    \"contactEmail\": \"info@grandhotel.com\",\n    \"contactPhone\": \"+1-123-456-7890\",\n    \"pricePerNight\": 199.99,\n    \"type\": \"HOTEL\",\n    \"roomCount\": 50\n}"
+					},
+					"url": {
+					  "raw": "{{baseUrl}}/api/hotels",
+					  "host": ["{{baseUrl}}"],
+					  "path": ["api", "hotels"]
+					},
+					"description": "Create a new hotel with all the necessary details. This automatically retrieves the hotel owner's ID from their profile and a valid cityId from the cities API."
+				  },
+				  "response": []
+				},
+				{
+					"name": "Get Hotel by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/hotels/{{hotelId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"hotels",
+								"{{hotelId}}"
+							]
+						},
+						"description": "Get detailed information about a specific hotel"
+					},
+					"response": []
+				},
+				{
+				  "name": "Update Hotel",
+				  "event": [
+					{
+					  "listen": "prerequest",
+					  "script": {
+						"exec": [
+						  "// Ensure we have a hotel owner token to authenticate",
+						  "if (!pm.collectionVariables.get(\"hotelOwnerToken\")) {",
+						  "    console.log(\"No hotel owner token found. Will attempt to login...\");",
+						  "    ",
+						  "    // Login as hotel owner",
+						  "    pm.sendRequest({",
+						  "        url: pm.variables.get(\"baseUrl\") + \"/api/auth/login\",",
+						  "        method: \"POST\",",
+						  "        header: {",
+						  "            \"Content-Type\": \"application/json\"",
+						  "        },",
+						  "        body: {",
+						  "            mode: \"raw\",",
+						  "            raw: JSON.stringify({",
+						  "                \"email\": \"owner@example.com\",  // Use the email of the hotel owner",
+						  "                \"password\": \"securePassword123\"",
+						  "            })",
+						  "        }",
+						  "    }, function (err, res) {",
+						  "        if (!err && res.code === 200) {",
+						  "            const token = res.json().token;",
+						  "            pm.collectionVariables.set(\"hotelOwnerToken\", token);",
+						  "            console.log(\"Successfully logged in as hotel owner!\");",
+						  "        } else {",
+						  "            console.error(\"Failed to login as hotel owner:\", err || res.text());",
+						  "        }",
+						  "    });",
+						  "}",
+						  "",
+						  "// Get the cityId and other necessary data",
+						  "const cityId = pm.collectionVariables.get(\"cityId\") || \"393ce2f1-4c8f-4f80-b72b-ab262d794d56\";",
+						  "pm.collectionVariables.set(\"cityId\", cityId);"
+						],
+						"type": "text/javascript"
+					  }
+					},
+					{
+					  "listen": "test",
+					  "script": {
+						"exec": [
+						  "if (pm.response.code === 200) {",
+						  "    console.log(\"Hotel updated successfully!\");",
+						  "    // Store updated hotel details if needed",
+						  "    if (pm.response.json() && pm.response.json().id) {",
+						  "        pm.collectionVariables.set(\"hotelId\", pm.response.json().id);",
+						  "    }",
+						  "} else {",
+						  "    console.error(\"Failed to update hotel: \" + pm.response.text());",
+						  "    ",
+						  "    // If 401, indicate authentication failure",
+						  "    if (pm.response.code === 401) {",
+						  "        console.log(\"Authentication failed. Token may be invalid or expired.\");",
+						  "    }",
+						  "    // If 403, indicate authorization failure",
+						  "    else if (pm.response.code === 403) {",
+						  "        console.log(\"Authorization failed. User does not own this hotel or is not an admin.\");",
+						  "    }",
+						  "}"
+						],
+						"type": "text/javascript"
+					  }
+					}
+				  ],
+				  "request": {
+					"method": "PUT",
+					"header": [
+					  {
+						"key": "Authorization",
+						"value": "Bearer {{hotelOwnerToken}}"
+					  },
+					  {
+						"key": "Content-Type",
+						"value": "application/json"
+					  }
+					],
+					"body": {
+					  "mode": "raw",
+					  "raw": "{\n    \"name\": \"Updated Grand Hotel\",\n    \"description\": \"An updated luxurious 5-star hotel in the heart of downtown\",\n    \"address\": \"456 Main Avenue\",\n    \"cityId\": \"{{cityId}}\",\n    \"country\": \"Canada\",\n    \"postalCode\": \"M5V 2T7\",\n    \"images\": [\n        {\n            \"url\": \"https://example.com/hotel-image-updated1.jpg\",\n            \"caption\": \"Updated Hotel Exterior\"\n        },\n        {\n            \"url\": \"https://example.com/hotel-image-updated2.jpg\",\n            \"caption\": \"Updated Lobby View\"\n        },\n        {\n            \"url\": \"https://example.com/hotel-image-updated3.jpg\",\n            \"caption\": \"New Pool Area\"\n        }\n    ],\n    \"rating\": 4.8,\n    \"amenities\": \"WiFi, Pool, Spa, Restaurant, Room Service, Gym, Conference Room\",\n    \"contactEmail\": \"info@updatedgrandhotel.com\",\n    \"contactPhone\": \"+1-987-654-3210\",\n    \"pricePerNight\": 249.99,\n    \"type\": \"LUXURY\",\n    \"roomCount\": 75\n}"
+					},
+					"url": {
+					  "raw": "{{baseUrl}}/api/hotels/{{hotelId}}",
+					  "host": ["{{baseUrl}}"],
+					  "path": ["api", "hotels", "{{hotelId}}"]
+					},
+					"description": "Update an existing hotel. Authentication is done via the hotel owner's JWT token, which is automatically used to determine ownership."
+				  },
+				  "response": []
+				},
+				{
+				  "name": "Delete Hotel",
+				  "event": [
+					{
+					  "listen": "prerequest",
+					  "script": {
+						"exec": [
+						  "// First ensure we have a hotel ID to delete",
+						  "let hotelId = pm.collectionVariables.get(\"hotelId\");",
+						  "let hotelIdToDelete = pm.collectionVariables.get(\"hotelIdToDelete\");",
+						  "",
+						  "if (!hotelId && !hotelIdToDelete) {",
+						  "    console.log(\"No hotel ID found. Will create a hotel first...\");",
+						  "    ",
+						  "    // Ensure we have a hotel owner token",
+						  "    if (!pm.collectionVariables.get(\"hotelOwnerToken\")) {",
+						  "        console.log(\"No hotel owner token found. Registering a new hotel owner...\");",
+						  "        ",
+						  "        pm.sendRequest({",
+						  "            url: pm.variables.get(\"baseUrl\") + \"/api/auth/register\",",
+						  "            method: \"POST\",",
+						  "            header: {",
+						  "                \"Content-Type\": \"application/json\"",
+						  "            },",
+						  "            body: {",
+						  "                mode: \"raw\",",
+						  "                raw: JSON.stringify({",
+						  "                    \"email\": \"owner\" + new Date().getTime() + \"@example.com\",",
+						  "                    \"password\": \"securePassword123\",",
+						  "                    \"firstName\": \"Hotel\",",
+						  "                    \"lastName\": \"Owner\",",
+						  "                    \"phone\": \"+1234567890\",",
+						  "                    \"passportId\": \"HOT\" + new Date().getTime(),",
+						  "                    \"role\": \"HOTEL_OWNER\"",
+						  "                })",
+						  "            }",
+						  "        }, function (err, res) {",
+						  "            if (!err && res.code === 201) {",
+						  "                const token = res.json().token;",
+						  "                pm.collectionVariables.set(\"hotelOwnerToken\", token);",
+						  "                console.log(\"Hotel owner registered successfully! Token obtained.\");",
+						  "                ",
+						  "                // Create a hotel after registration",
+						  "                createHotelToDelete();",
+						  "            } else {",
+						  "                console.error(\"Failed to register hotel owner:\", err || res.json());",
+						  "            }",
+						  "        });",
+						  "    } else {",
+						  "        // We have a token, create the hotel",
+						  "        createHotelToDelete();",
+						  "    }",
+						  "} else {",
+						  "    // If we have a hotel ID, use it for deletion",
+						  "    const idToUse = hotelIdToDelete || hotelId;",
+						  "    console.log(\"Using existing hotel ID for deletion: \" + idToUse);",
+						  "    pm.variables.set(\"hotelIdToDelete\", idToUse);",
+						  "    pm.collectionVariables.set(\"hotelIdToDelete\", idToUse);",
+						  "}",
+						  "",
+						  "// Function to create a hotel to delete",
+						  "function createHotelToDelete() {",
+						  "    // First get a city ID",
+						  "    pm.sendRequest({",
+						  "        url: pm.variables.get(\"baseUrl\") + \"/api/cities\",",
+						  "        method: \"GET\",",
+						  "        header: {",
+						  "            \"Content-Type\": \"application/json\"",
+						  "        }",
+						  "    }, function (err, res) {",
+						  "        let cityId = \"7b9694f5-d606-419d-84e1-68b38994978e\";  // Default city ID",
+						  "        ",
+						  "        if (!err && res.code === 200) {",
+						  "            const cities = res.json();",
+						  "            if (cities && cities.length > 0) {",
+						  "                cityId = cities[0].id;",
+						  "                console.log(\"Using cityId: \" + cityId);",
+						  "            }",
+						  "        }",
+						  "        ",
+						  "        // Now create a hotel to delete",
+						  "        const timestamp = new Date().getTime();",
+						  "        pm.sendRequest({",
+						  "            url: pm.variables.get(\"baseUrl\") + \"/api/hotels\",",
+						  "            method: \"POST\",",
+						  "            header: {",
+						  "                \"Authorization\": \"Bearer \" + pm.collectionVariables.get(\"hotelOwnerToken\"),",
+						  "                \"Content-Type\": \"application/json\"",
+						  "            },",
+						  "            body: {",
+						  "                mode: \"raw\",",
+						  "                raw: JSON.stringify({",
+						  "                    \"name\": \"Delete Me Hotel \" + timestamp,",
+						  "                    \"description\": \"Hotel to be deleted\",",
+						  "                    \"address\": \"999 Delete Lane\",",
+						  "                    \"cityId\": cityId,",
+						  "                    \"country\": \"Canada\",",
+						  "                    \"postalCode\": \"M5V 2T6\",",
+						  "                    \"images\": [",
+						  "                        {",
+						  "                            \"url\": \"https://example.com/delete-me.jpg\",",
+						  "                            \"caption\": \"Soon to be deleted\"",
+						  "                        }",
+						  "                    ],",
+						  "                    \"rating\": 2.0,",
+						  "                    \"amenities\": \"Basic amenities\",",
+						  "                    \"contactEmail\": \"delete@me.com\",",
+						  "                    \"contactPhone\": \"+1-111-111-1111\",",
+						  "                    \"pricePerNight\": 50.00,",
+						  "                    \"type\": \"MOTEL\",",
+						  "                    \"roomCount\": 5",
+						  "                })",
+						  "            }",
+						  "        }, function (err, res) {",
+						  "            if (!err && (res.code === 201 || res.code === 200)) {",
+						  "                const hotel = res.json();",
+						  "                if (hotel && hotel.id) {",
+						  "                    const newHotelId = hotel.id;",
+						  "                    console.log(\"Created hotel to delete with ID: \" + newHotelId);",
+						  "                    pm.variables.set(\"hotelIdToDelete\", newHotelId);",
+						  "                    pm.collectionVariables.set(\"hotelIdToDelete\", newHotelId);",
+						  "                } else {",
+						  "                    console.error(\"Hotel created but no ID found in response\");",
+						  "                }",
+						  "            } else {",
+						  "                console.error(\"Failed to create hotel to delete:\", err || res.text());",
+						  "            }",
+						  "        });",
+						  "    });",
+						  "}"
+						],
+						"type": "text/javascript"
+					  }
+					},
+					{
+					  "listen": "test",
+					  "script": {
+						"exec": [
+						  "if (pm.response.code === 200) {",
+						  "    console.log(\"Hotel deleted successfully!\");",
+						  "    // Clear the deleted hotel ID but keep token",
+						  "    pm.collectionVariables.set(\"hotelIdToDelete\", \"\");",
+						  "} else if (pm.response.code === 404) {",
+						  "    console.error(\"Hotel not found. It may have been already deleted or the ID is invalid.\");",
+						  "    pm.collectionVariables.set(\"hotelIdToDelete\", \"\");",
+						  "} else {",
+						  "    console.error(\"Failed to delete hotel: \" + pm.response.text());",
+						  "    ",
+						  "    // If 401, indicate authentication failure",
+						  "    if (pm.response.code === 401) {",
+						  "        console.log(\"Authentication failed. Missing or invalid token.\");",
+						  "    }",
+						  "    // If 403, indicate authorization failure",
+						  "    else if (pm.response.code === 403) {",
+						  "        console.log(\"Authorization failed. User does not own this hotel or is not an admin.\");",
+						  "    }",
+						  "    // If 405, indicate method not allowed",
+						  "    else if (pm.response.code === 405) {",
+						  "        console.log(\"Method not allowed. Check API endpoint and HTTP method.\");",
+						  "    }",
+						  "}"
+						],
+						"type": "text/javascript"
+					  }
+					}
+				  ],
+				  "request": {
+					"method": "DELETE",
+					"header": [
+					  {
+						"key": "Authorization",
+						"value": "Bearer {{hotelOwnerToken}}"
+					  }
+					],
+					"url": {
+					  "raw": "{{baseUrl}}/api/hotels/{{hotelIdToDelete}}",
+					  "host": ["{{baseUrl}}"],
+					  "path": ["api", "hotels", "{{hotelIdToDelete}}"]
+					},
+					"description": "Delete a hotel. Only the hotel owner or an admin can delete a hotel. Authentication is strictly via the Bearer token in the Authorization header."
+				  },
+				  "response": []
+				},
+					{
+				  "name": "Create Room",
+				  "event": [
+					{
+					  "listen": "prerequest",
+					  "script": {
+						"exec": [
+						  "// Ensure we have a hotel ID and hotel owner token",
+						  "if (!pm.collectionVariables.get(\"hotelId\")) {",
+						  "    console.log(\"No hotel ID found. Please run the 'Create Hotel' request first.\");",
+						  "}",
+						  "",
+						  "if (!pm.collectionVariables.get(\"hotelOwnerToken\")) {",
+						  "    console.log(\"No hotel owner token found. Please register or login as a hotel owner first.\");",
+						  "}"
+						],
+						"type": "text/javascript"
+					  }
+					},
+					{
+					  "listen": "test",
+					  "script": {
+						"exec": [
+						  "if (pm.response.code === 201) {",
+						  "    pm.collectionVariables.set(\"roomId\", pm.response.json().id);",
+						  "    console.log(\"Room created successfully with ID: \" + pm.response.json().id);",
+						  "} else {",
+						  "    console.error(\"Failed to create room: \" + pm.response.text());",
+						  "}"
+						],
+						"type": "text/javascript"
+					  }
+					}
+				  ],
+				  "request": {
+					"method": "POST",
+					"header": [
+					  {
+						"key": "Authorization",
+						"value": "Bearer {{hotelOwnerToken}}"
+					  },
+					  {
+						"key": "Content-Type",
+						"value": "application/json"
+					  }
+					],
+					"body": {
+					  "mode": "raw",
+					  "raw": "{\n    \"type\": \"Deluxe Suite\",\n    \"description\": \"Spacious suite with king-size bed and city view\",\n    \"price\": 299.99,\n    \"currency\": \"USD\",\n    \"maxOccupancy\": 2,\n    \"amenities\": \"Mini-bar, Smart TV, Free Wi-Fi, Coffee Maker\",\n    \"images\": [\n        {\n            \"url\": \"https://example.com/room-deluxe.jpg\",\n            \"caption\": \"Deluxe Suite\"\n        }\n    ],\n    \"availableCount\": 5\n}"
+					},
+					"url": {
+					  "raw": "{{baseUrl}}/api/hotels/{{hotelId}}/rooms",
+					  "host": [
+						"{{baseUrl}}"
+					  ],
+					  "path": [
+						"api",
+						"hotels",
+						"{{hotelId}}",
+						"rooms"
+					  ]
+					},
+					"description": "Create a new room in the specified hotel. The room ID will be stored in the roomId variable for use in other requests."
+				  },
+				  "response": []
+				},
+				{
+					"name": "Update Room Availability",
+					"event": [
+					  {
+						"listen": "prerequest",
+						"script": {
+						  "exec": [
+							"// Check if we have the necessary variables",
+							"if (!pm.collectionVariables.get(\"hotelId\")) {",
+							"    console.log(\"No hotel ID found. Please run the 'Create Hotel' request first.\");",
+							"}",
+							"",
+							"if (!pm.collectionVariables.get(\"roomId\")) {",
+							"    console.log(\"No room ID found. Please run the 'Create Room' request first.\");",
+							"}",
+							"",
+							"if (!pm.collectionVariables.get(\"hotelOwnerToken\")) {",
+							"    console.log(\"No hotel owner token found. Please register or login as a hotel owner first.\");",
+							"}"
+						  ],
+						  "type": "text/javascript"
+						}
+					  },
+					  {
+						"listen": "test",
+						"script": {
+						  "exec": [
+							"if (pm.response.code === 200) {",
+							"    console.log(\"Room availability updated successfully!\");",
+							"} else {",
+							"    console.error(\"Failed to update room availability: \" + pm.response.text());",
+							"}"
+						  ],
+						  "type": "text/javascript"
+						}
+					  }
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{hotelOwnerToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"roomId\": \"{{roomId}}\",\n    \"availableCount\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/hotels/{{hotelId}}/rooms",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"hotels",
+								"{{hotelId}}",
+									"rooms"
+							]
+						},
+						"description": "Update room availability"
+					},
+					"response": []
+				},
+				{
+					"name": "Book Hotel Room",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if we have a valid user token",
+									"if (!pm.collectionVariables.get(\"userToken\")) {",
+									"    console.log(\"No user token found. Attempting to login or register a user...\");",
+									"    ",
+									"    // First try to login with existing credentials",
+									"    pm.sendRequest({",
+									"        url: pm.variables.get(\"baseUrl\") + \"/api/auth/login\",",
+									"        method: \"POST\",",
+									"        header: {",
+									"            \"Content-Type\": \"application/json\"",
+									"        },",
+									"        body: {",
+									"            mode: \"raw\",",
+									"            raw: JSON.stringify({",
+									"                \"email\": \"user@example.com\",",
+									"                \"password\": \"securePassword123\"",
+									"            })",
+									"        }",
+									"    }, function (err, res) {",
+									"        if (!err && res.code === 200 && res.json().token) {",
+									"            pm.collectionVariables.set(\"userToken\", res.json().token);",
+									"            console.log(\"Successfully logged in as user!\");",
+									"        } else {",
+									"            console.log(\"Login failed, attempting to register a new user...\");",
+									"            ",
+									"            // Register a new user if login fails",
+									"            const timestamp = new Date().getTime();",
+									"            pm.sendRequest({",
+									"                url: pm.variables.get(\"baseUrl\") + \"/api/auth/register\",",
+									"                method: \"POST\",",
+									"                header: {",
+									"                    \"Content-Type\": \"application/json\"",
+									"                },",
+									"                body: {",
+									"                    mode: \"raw\",",
+									"                    raw: JSON.stringify({",
+									"                        \"email\": \"user\" + timestamp + \"@example.com\",",
+									"                        \"password\": \"securePassword123\",",
+									"                        \"firstName\": \"John\",",
+									"                        \"lastName\": \"Doe\",",
+									"                        \"phone\": \"+1234567890\",",
+									"                        \"passportId\": \"USER\" + timestamp,",
+									"                        \"role\": \"USER\"",
+									"                    })",
+									"                }",
+									"            }, function (err, res) {",
+									"                if (!err && res.code === 201 && res.json().token) {",
+									"                    pm.collectionVariables.set(\"userToken\", res.json().token);",
+									"                    console.log(\"Successfully registered new user!\");",
+									"                } else {",
+									"                    console.error(\"Failed to register user:\", err || res.text());",
+									"                }",
+									"            });",
+									"        }",
+									"    });",
+									"} else {",
+									"    console.log(\"User token found, proceeding with request.\");",
+									"}",
+									"",
+									"// Ensure we have other required variables",
+									"if (!pm.collectionVariables.get(\"hotelId\")) {",
+									"    console.log(\"Warning: No hotel ID found. Please run the 'Create Hotel' request first.\");",
+									"}",
+									"",
+									"if (!pm.collectionVariables.get(\"roomId\")) {",
+									"    console.log(\"Warning: No room ID found. Please run the 'Create Room' request first.\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"bookingId\", pm.response.json().id);",
+									"    console.log(\"Hotel booking successful with ID: \" + pm.response.json().id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"hotelId\": \"{{hotelId}}\",\n    \"roomId\": \"{{roomId}}\",\n    \"checkInDate\": \"2025-04-15\",\n    \"checkOutDate\": \"2025-04-20\",\n    \"guestCount\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/hotels/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"hotels",
+								"bookings"
+							]
+						},
+						"description": "Book a hotel room"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Hotel Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{hotelOwnerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/hotels/{{hotelId}}/bookings?startDate=2025-01-01&endDate=2025-12-31&roomType=Deluxe Suite",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"hotels",
+								"{{hotelId}}",
+								"bookings"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2025-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-12-31"
+								},
+								{
+									"key": "roomType",
+									"value": "Deluxe Suite"
+								}
+							]
+						},
+							"description": "Get bookings for a specific hotel (requires hotel owner access)"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints related to hotel management and bookings"
+		},
+		{
+			"name": "Booking Management",
+			"item": [
+				{
+					"name": "Get User Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
+						},
+						"description": "Get all bookings for the current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Booking History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings/history",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"history"
+							]
+						},
+						"description": "Get booking history for the current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Booking by ID",
+						"event": [
+							{
+								"listen": "prerequest",
+								"script": {
+									"exec": [
+										"// Check if we have a valid user token and booking ID",
+										"if (!pm.collectionVariables.get(\"userToken\")) {",
+										"    console.log(\"No user token found. Please run one of the user login or registration requests first.\");",
+										"}",
+										"",
+										"if (!pm.collectionVariables.get(\"bookingId\")) {",
+										"    console.log(\"Warning: No booking ID found. Please make a booking first or the request will fail.\");",
+										"}"
+									],
+									"type": "text/javascript"
+								}
+							}
+						],
+						"request": {
+							"method": "GET",
+							"header": [
+								{
+									"key": "Authorization",
+									"value": "Bearer {{userToken}}"
+								}
+							],
+							"url": {
+								"raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+								"host": [
+									"{{baseUrl}}"
+								],
+								"path": [
+									"api",
+									"bookings",
+									"{{bookingId}}"
+								]
+							},
+							"description": "Get details for a specific booking"
+						},
+						"response": []
+					},
+				{
+					"name": "Cancel Booking",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"{{bookingId}}"
+							]
+						},
+						"description": "Cancel a booking"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints related to managing bookings"
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications"
+							]
+						},
+						"description": "Get all notifications for the current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Notification as Read",
+						"event": [
+							{
+								"listen": "prerequest",
+								"script": {
+									"exec": [
+										"// First check if we have a user token",
+										"if (!pm.collectionVariables.get(\"userToken\")) {",
+										"    console.log(\"No user token found. Please run one of the user login or registration requests first.\");",
+										"    return;",
+										"}",
+										"",
+										"// Fetch notifications to get an unread notification ID",
+										"pm.sendRequest({",
+										"    url: pm.variables.get(\"baseUrl\") + \"/api/notifications\",",
+										"    method: \"GET\",",
+										"    header: {",
+										"        \"Authorization\": \"Bearer \" + pm.collectionVariables.get(\"userToken\")",
+										"    }",
+										"}, function (err, res) {",
+										"    if (err) {",
+										"        console.error(\"Error fetching notifications:\", err);",
+										"        return;",
+										"    }",
+										"",
+										"    if (res.code === 200) {",
+										"        const notifications = res.json();",
+										"        ",
+										"        // Find the first unread notification",
+										"        const unreadNotification = Array.isArray(notifications) && notifications.find(n => !n.isRead);",
+										"",
+										"        if (unreadNotification) {",
+										"            console.log(\"Found unread notification with ID: \" + unreadNotification.id);",
+										"            pm.collectionVariables.set(\"notificationId\", unreadNotification.id);",
+										"            ",
+										"            // Update the request body with the found notification ID",
+										"            const requestBody = {",
+										"                id: unreadNotification.id,",
+										"                isRead: true",
+										"            };",
+										"            pm.variables.set(\"notificationRequestBody\", JSON.stringify(requestBody, null, 2));",
+										"        } else {",
+										"            console.warn(\"No unread notifications found. Using placeholder ID.\");",
+										"            pm.collectionVariables.set(\"notificationId\", \"notification-id-placeholder\");",
+										"            ",
+										"            // Set default body with placeholder",
+										"            const requestBody = {",
+										"                id: \"notification-id-placeholder\",",
+										"                isRead: true",
+										"            };",
+										"            pm.variables.set(\"notificationRequestBody\", JSON.stringify(requestBody, null, 2));",
+										"        }",
+										"    } else {",
+										"        console.error(\"Failed to fetch notifications. Status: \" + res.code);",
+										"    }",
+										"});"
+									],
+									"type": "text/javascript"
+								}
+							},
+							{
+								"listen": "test",
+								"script": {
+									"exec": [
+										"if (pm.response.code === 200) {",
+										"    console.log(\"Notification successfully marked as read!\");",
+										"} else if (pm.response.code === 404) {",
+										"    console.error(\"Notification not found. The ID may be invalid.\");",
+										"} else if (pm.response.code === 401) {",
+										"    console.error(\"Authentication failed. Token may be invalid or expired.\");",
+										"} else {",
+										"    console.error(\"Failed to mark notification as read: \" + pm.response.text());",
+										"}"
+									],
+									"type": "text/javascript"
+								}
+							}
+						],
+						"request": {
+							"method": "PUT",
+							"header": [
+								{
+									"key": "Authorization",
+									"value": "Bearer {{userToken}}"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": {
+								"mode": "raw",
+								"raw": "{{notificationRequestBody}}"
+							},
+							"url": {
+								"raw": "{{baseUrl}}/api/notifications",
+								"host": [
+									"{{baseUrl}}"
+								],
+								"path": [
+									"api",
+									"notifications"
+								]
+							},
+							"description": "Mark a notification as read. This request automatically finds an unread notification to mark as read."
+						},
+						"response": []
+					}
+			],
+			"description": "Endpoints related to user notifications"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "userToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "hotelOwnerToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "adminToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "hotelId",
+			"value": "60455486-5717-468e-b6f2-9587d926644f",
+			"type": "string"
+		},
+		{
+			"key": "ownerId",
+			"value": "9e592e11-21c9-473b-a3c0-66d13ffb17c4",
+			"type": "string"
+		},
+		{
+			"key": "roomId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "bookingId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "hotelIdToDelete",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "cityId", 
+			"value": "393ce2f1-4c8f-4f80-b72b-ab262d794d56",
+			"type": "string"
+		},
+		{
+			"key": "currentOwnerId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "notificationId", 
+			"value": "",
+			"type": "string"
+		}
+	]
+}
