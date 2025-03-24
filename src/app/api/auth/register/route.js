@@ -1,34 +1,29 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashPassword, generateToken } from '@/lib/auth';
+import { z } from 'zod';
+
+// Validation schema
+const registerSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  passportId: z.string().length(9, 'Passport ID must be exactly 9 characters'),
+  phone: z.string().optional(),
+  role: z.enum(['USER', 'ADMIN']).optional().default('USER')
+});
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, password, firstName, lastName, phone, role } = body;
-    // Handle both passportID and passportId variations
-    const passportId = body.passportId || body.passportID;
     
-    // Validate required fields
-    if (!email || !password || !firstName || !lastName || !passportId) {
-      return NextResponse.json(
-        { error: 'Missing required fields (email, password, firstName, lastName, passportID)' },
-        { status: 400 }
-      );
-    }
-    
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
+    // Validate request body against schema
+    const validatedData = registerSchema.parse(body);
     
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email: validatedData.email }
     });
     
     if (existingUser) {
@@ -39,18 +34,13 @@ export async function POST(request) {
     }
     
     // Hash password
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(validatedData.password);
     
-    // Create user with consistent passportId field
+    // Create user
     const user = await prisma.user.create({
       data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        phone,
-        role: role || 'USER',
-        passportId
+        ...validatedData,
+        password: hashedPassword
       }
     });
     
@@ -66,6 +56,15 @@ export async function POST(request) {
     }, { status: 201 });
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors[0].message },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Registration failed' },
       { status: 500 }

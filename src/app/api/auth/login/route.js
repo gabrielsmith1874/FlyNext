@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { comparePassword, generateToken } from '@/lib/auth';
+import prisma from '../../../../../lib/prisma';
+import { comparePassword, generateToken } from '../../../../../lib/auth';
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, password, passportID } = body;
+    const { email, password, passportId } = body;
     
     // Validate required fields
     if (!email || !password) {
@@ -37,20 +37,21 @@ export async function POST(request) {
         { status: 401 }
       );
     }
-    //Verify passportID is 9 characters
-    if (passportID && passportID.length !== 9) {
+
+    // Verify passportId is 9 characters
+    if (passportId && passportId.length !== 9) {
       return NextResponse.json(
         { error: 'Passport ID must be 9 characters' },
         { status: 400 }
       );
     }
     
-    // Update user's passportID if provided
+    // Update user's passportId if provided
     let updatedUser = user;
-    if (passportID) {
+    if (passportId) {
       updatedUser = await prisma.user.update({
         where: { email },
-        data: { passportID }
+        data: { passportId }
       });
     }
     

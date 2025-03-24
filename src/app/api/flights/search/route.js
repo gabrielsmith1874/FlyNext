@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { searchFlights, getCities } from '@/lib/afs-api';
+import { searchFlights, getCities } from '../../../../../lib/afs-api';
+import { verifyToken } from '../../../../../lib/auth';
 
 // Create a cache to avoid fetching cities on every request
 let citiesCache = null;
@@ -80,6 +81,19 @@ async function autoCompleteCity(partialName) {
 }
 
 export async function GET(request) {
+
+  console.log('GET request to /api/flights/search');
+  // Authorization check
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const token = authHeader.split(' ')[1];
+  const user = await verifyToken(token);
+  if (!user) {
+    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     let origin = searchParams.get('from');
@@ -102,8 +116,13 @@ export async function GET(request) {
     
     try {
       // Search flights
-      const results = await searchFlights(origin, destination, date);
-      return NextResponse.json(results);
+      const data = await searchFlights(origin, destination, date);
+      // Extract flights array from the returned data
+      let flights = data?.results ?? data;
+      if (!Array.isArray(flights)) flights = [];
+      
+      // Wrap the flights in the expected structure and respond with it
+      return NextResponse.json({ results: [{ legs: 1, flights }] });
     } catch (searchError) {
       // For city not found or other API-specific errors, return empty results
       console.log('Flight search found no results or city not found:', searchError.message);

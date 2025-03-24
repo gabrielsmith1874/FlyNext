@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -79,7 +79,7 @@ model Booking {
   updatedAt         DateTime        @updatedAt
   flights           FlightBooking[]
   hotelBookings     HotelBooking[]
-  payment           Payment?        // Add this relation
+  payment           Payment?
 }
 
 model Payment {
@@ -106,8 +106,8 @@ model Hotel {
   amenities       String        
   images          HotelImage[]
   rooms           Room[]
-  latitude  Float?
-  longitude Float?
+  latitude        Float?
+  longitude       Float?
   bookings        HotelBooking[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -133,7 +133,7 @@ model Room {
   images      RoomImage[]
   bookings    HotelBooking[]
   availableCount Int @default(1)
-  availability RoomAvailabilityCalendar[] // Add this relation field
+  availability RoomAvailabilityCalendar[]
 }
 
 model RoomAvailabilityCalendar {
@@ -167,7 +167,7 @@ model HotelBooking {
   guestCount    Int
   price         Float
   currency      String    @default("USD")
-  status        String    @default("PENDING") // Changed from BookingStatus enum
+  status        String    @default("PENDING")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }

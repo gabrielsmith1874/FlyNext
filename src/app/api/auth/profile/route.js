@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
-import { verifyToken } from '@/lib/auth';
+import prisma from '../../../../../lib/prisma'; // updated relative import
+import { verifyToken, comparePassword, hashPassword } from '../../../../../lib/auth';
 
 export async function GET(request) {
   try {
@@ -162,8 +161,10 @@ export async function PUT(request) {
       lastName, 
       phone, 
       profilePicture, 
-      passportId,  // Added passportId to destructuring
-      email 
+      passportId,
+      email,
+      currentPassword,
+      newPassword
     } = body;
 
     // Validate email format if provided
@@ -212,6 +213,30 @@ export async function PUT(request) {
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
     if (passportId !== undefined) updateData.passportId = passportId;
     if (email !== undefined) updateData.email = email;
+
+    // If password update is requested, verify current password and update with hashed new password
+    if (currentPassword && newPassword) {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { password: true }
+      });
+      
+      if (!userRecord) {
+        return NextResponse.json(
+          { error: 'User not found for password verification' },
+          { status: 404 }
+        );
+      }
+      
+      const isPasswordValid = await comparePassword(currentPassword, userRecord.password);
+      if (!isPasswordValid) {
+        return NextResponse.json(
+          { error: 'Current password is incorrect' },
+          { status: 400 }
+        );
+      }
+      updateData.password = await hashPassword(newPassword);
+    }
 
     // Update user
     const updatedUser = await prisma.user.update({

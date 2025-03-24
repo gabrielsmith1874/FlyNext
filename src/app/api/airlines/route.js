@@ -11,16 +11,16 @@ export async function GET() {
     if (airlines.length === 0) {
       const afsAirlines = await getAirlines();
       
-      // Create airlines in database
-      const airlineData = afsAirlines.map(airline => ({
-        code: airline.code,
-        name: airline.name,
-        baseCode: airline.base?.code
-      }));
-      
-      await prisma.airline.createMany({
-        data: airlineData
-      });
+      // Create airlines
+      for (const airline of afsAirlines) {
+        await prisma.airline.create({
+          data: {
+            code: airline.code,
+            name: airline.name,
+            baseCode: airline.baseCode
+          }
+        });
+      }
       
       // Get airlines from database again
       airlines = await prisma.airline.findMany();
