@@ -34,20 +34,22 @@ export async function POST(request) {
       );
     }
     
-    
-    // Check if user is a hotel owner
-    if (user.role !== 'HOTEL_OWNER' && user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
-    }
-    
     const body = await request.json();
-    const { name, logo, address, cityId, rating, images, amenities } = body;
+    const { 
+      name, 
+      description,
+      logo, 
+      address, 
+      cityId, 
+      rating, 
+      images, 
+      amenities,
+      contactEmail,
+      contactPhone 
+    } = body;
     
     // Validate required fields
-    if (!name || !address || !cityId || !rating) {
+    if (!name || !address || !cityId || !rating || !contactEmail || !contactPhone) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -58,12 +60,15 @@ export async function POST(request) {
     const hotel = await prisma.hotel.create({
       data: {
         name,
+        description,
         logo,
         address,
         cityId,
         rating,
         ownerId: user.id,
         amenities: amenities || '',
+        contactEmail,
+        contactPhone,
         images: {
           create: images?.map(image => ({
             url: image.url,
@@ -76,6 +81,14 @@ export async function POST(request) {
         city: true
       }
     });
+    
+    // Automatically update the user's role to HOTEL_OWNER if not already
+    if (user.role !== 'HOTEL_OWNER') {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { role: 'HOTEL_OWNER' }
+      });
+    }
     
     return NextResponse.json(hotel, { status: 201 });
   } catch (error) {
@@ -90,166 +103,240 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    
+    // Get all search parameters with logging
+    const city = searchParams.get('city');
     const cityId = searchParams.get('cityId');
+    const ownerId = searchParams.get('ownerId');
     const name = searchParams.get('name');
-    const minRating = searchParams.get('minRating');
+    const minRatingStr = searchParams.get('minRating');
+    const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
-    const amenities = searchParams.get('amenities');
-    const checkInDate = searchParams.get('checkInDate');
-    const checkOutDate = searchParams.get('checkOutDate');
     
-    // Build filter
-    const filter = {};
+    console.log('Search parameters:', { 
+      city, cityId, ownerId, name, minRatingStr, minPrice, maxPrice 
+    });
     
-    if (cityId) {
-      filter.cityId = cityId;
-    }
-    
-    if (name) {
-      // Fix: Use contains without mode for case-insensitive search
-      filter.name = {
-        contains: name
-      };
-    }
-    
-    if (minRating) {
-      filter.rating = {
-        gte: parseFloat(minRating)
-      };
-    }
-    
-    if (amenities) {
-      filter.amenities = {
-        contains: amenities
-      };
-    }
-    
-    // Get hotels with their rooms
-    const hotels = await prisma.hotel.findMany({
-      where: filter,
+    // Build the basic query structure
+    const query = {
+      where: {},
       include: {
-        images: true,
         city: true,
+        images: true,
         rooms: {
-          include: {
-            images: true
+          select: {
+            id: true,
+            type: true,
+            price: true,
+            currency: true,
+            availableCount: true,
+            _count: {
+              select: {
+                bookings: true
+              }
+            }
           }
         }
       }
-    });
-    
-    // If dates are provided, filter hotels with available rooms
-    let filteredHotels = hotels;
-    
-    if (checkInDate && checkOutDate) {
-      const start = new Date(checkInDate);
-      const end = new Date(checkOutDate);
-      
-      // Validate date format
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid date format. Use YYYY-MM-DD format' },
-          { status: 400 }
-        );
+    };
+
+    // Apply each filter individually with error handling
+    try {
+      // City ID filter
+      if (cityId) {
+        query.where.cityId = cityId;
       }
       
-      // Validate date range
-      if (end <= start) {
-        return NextResponse.json(
-          { error: 'Check-out date must be after check-in date' },
-          { status: 400 }
-        );
+      // City name filter
+      if (city) {
+        query.where = {
+          ...query.where,
+          city: {
+            name: {
+              contains: city
+            }
+          }
+        };
       }
       
-      // Get all dates in the range
-      const datesInRange = getDatesInRange(start, end);
+      // Hotel name filter
+      if (name) {
+        query.where.name = {
+          contains: name, // Removed mode: 'insensitive' as it is not supported in this Prisma version
+        };
+        console.log(`Filtering hotels with name containing "${name}"`);
+      }
       
-      // Filter hotels with available rooms for the entire date range
-      filteredHotels = await Promise.all(hotels.map(async hotel => {
-        // Check availability for each room in the hotel
-        const availableRooms = await Promise.all(hotel.rooms.map(async room => {
-          let isAvailable = true;
-          
-          // For each date, check if the room has availability
-          for (const date of datesInRange) {
-            const bookingsOnDate = await prisma.hotelBooking.count({
-              where: {
-                roomId: room.id,
-                status: 'CONFIRMED',
-                booking: {
-                  status: { not: 'CANCELLED' }
-                },
-                checkInDate: { lte: new Date(date) },
-                checkOutDate: { gt: new Date(date) }
+      // Minimum rating filter
+      if (minRatingStr) {
+        try {
+          const minRating = parseFloat(minRatingStr);
+          if (!isNaN(minRating)) {
+            query.where.rating = {
+              gte: minRating
+            };
+            console.log(`Filtering hotels with minimum rating: ${minRating}`);
+          } else {
+            console.warn(`Invalid minRating value: "${minRatingStr}", ignoring this filter`);
+          }
+        } catch (e) {
+          console.warn(`Error parsing minRating "${minRatingStr}": ${e.message}, ignoring this filter`);
+        }
+      }
+      
+      // Owner filter
+      if (ownerId) {
+        query.where.ownerId = ownerId;
+        // When querying owned hotels, include additional details
+        query.include = {
+          ...query.include,
+          rooms: {
+            select: {
+              id: true,
+              type: true,
+              price: true,
+              availableCount: true,
+              _count: {
+                select: {
+                  bookings: {
+                    where: {
+                      status: 'CONFIRMED'
+                    }
+                  }
+                }
               }
-            });
-            
-            // If bookings equals or exceeds available count, room is not available
-            if (bookingsOnDate >= room.availableCount) {
-              isAvailable = false;
-              break;
+            }
+          }
+        };
+      }
+      
+      // Price range filters - wrap in try-catch
+      if (minPrice || maxPrice) {
+        try {
+          const priceFilter = {};
+          
+          if (minPrice) {
+            const parsedMinPrice = parseFloat(minPrice);
+            if (!isNaN(parsedMinPrice)) {
+              priceFilter.gte = parsedMinPrice;
+            } else {
+              console.warn(`Invalid minPrice value: "${minPrice}", ignoring this part of filter`);
             }
           }
           
-          return isAvailable ? room : null;
-        }));
-        
-        // Filter out null rooms and return hotel with only available rooms
-        const filteredRooms = availableRooms.filter(room => room !== null);
-        
-        if (filteredRooms.length > 0) {
+          if (maxPrice) {
+            const parsedMaxPrice = parseFloat(maxPrice);
+            if (!isNaN(parsedMaxPrice)) {
+              priceFilter.lte = parsedMaxPrice;
+            } else {
+              console.warn(`Invalid maxPrice value: "${maxPrice}", ignoring this part of filter`);
+            }
+          }
+          
+          // Only add the filter if we have valid price conditions
+          if (Object.keys(priceFilter).length > 0) {
+            query.where.rooms = {
+              some: {
+                price: priceFilter
+              }
+            };
+          }
+        } catch (e) {
+          console.warn(`Error parsing price filters: ${e.message}, ignoring price filters`);
+        }
+      }
+    } catch (filterError) {
+      console.error('Error applying filters:', filterError);
+      // Continue with query execution without the problematic filters
+    }
+
+    console.log('Executing query:', JSON.stringify(query, null, 2));
+    
+    // Execute the query with error handling
+    let hotels = [];
+    try {
+      hotels = await prisma.hotel.findMany(query);
+      console.log(`Found ${hotels.length} hotels`);
+    } catch (queryError) {
+      console.error('Database query error:', queryError);
+      return NextResponse.json(
+        { error: 'Database query failed: ' + queryError.message },
+        { status: 500 }
+      );
+    }
+
+    // Format response data with error handling
+    try {
+      const formattedHotels = hotels.map(hotel => {
+        try {
+          // Find cheapest room safely
+          let cheapestRoom = null;
+          if (hotel.rooms && hotel.rooms.length > 0) {
+            cheapestRoom = hotel.rooms.reduce((min, room) => 
+              (!min || (room.price !== undefined && room.price < min.price)) ? room : min
+            , null);
+          }
+
           return {
-            ...hotel,
-            rooms: filteredRooms
+            id: hotel.id,
+            name: hotel.name || '',
+            description: hotel.description || '',
+            address: hotel.address || '',
+            city: hotel.city?.name || '',
+            country: hotel.city?.country || '',
+            rating: hotel.rating || 0,
+            amenities: hotel.amenities || '',
+            images: hotel.images || [],
+            pricePerNight: cheapestRoom?.price || 0,
+            currency: cheapestRoom?.currency || 'USD',
+            rooms: (hotel.rooms || []).map(room => {
+              try {
+                return {
+                  id: room.id || '',
+                  type: room.type || '',
+                  description: room.description || '',
+                  price: room.price || 0,
+                  currency: room.currency || 'USD',
+                  availableCount: room.availableCount || 0,
+                  bookedCount: room._count?.bookings || 0
+                };
+              } catch (roomError) {
+                console.error('Error formatting room data:', roomError);
+                return {
+                  id: room.id || '',
+                  type: 'Error formatting room data',
+                  price: 0,
+                  currency: 'USD',
+                  availableCount: 0,
+                  bookedCount: 0
+                };
+              }
+            })
+          };
+        } catch (hotelError) {
+          console.error('Error formatting hotel data:', hotelError);
+          // Return minimal hotel data to avoid breaking the response
+          return {
+            id: hotel.id || 'unknown',
+            name: hotel.name || 'Error formatting hotel data',
+            images: [],
+            rooms: []
           };
         }
-        
-        return null;
-      }));
-      
-      // Remove hotels without available rooms
-      filteredHotels = filteredHotels.filter(hotel => hotel !== null);
-    }
-    
-    // Filter by max price if provided
-    if (maxPrice) {
-      const maxPriceValue = parseFloat(maxPrice);
-      filteredHotels = filteredHotels.filter(hotel => {
-        return hotel.rooms.some(room => room.price <= maxPriceValue);
       });
-    }
-    
-    // Format hotels to include starting price and location
-    const formattedHotels = filteredHotels.map(hotel => {
-      // Calculate the starting price (lowest price among available rooms)
-      const startingPrice = Math.min(
-        ...hotel.rooms.map(room => room.price)
+
+      return NextResponse.json(formattedHotels);
+    } catch (formatError) {
+      console.error('Error formatting response data:', formatError);
+      return NextResponse.json(
+        { error: 'Error formatting response data: ' + formatError.message },
+        { status: 500 }
       );
-      
-      return {
-        id: hotel.id,
-        name: hotel.name,
-        address: hotel.address,
-        cityId: hotel.cityId,
-        city: hotel.city,
-        rating: hotel.rating,
-        images: hotel.images,
-        amenities: hotel.amenities,
-        startingPrice,
-        currency: hotel.rooms[0]?.currency || 'USD',
-        location: {
-          latitude: hotel.latitude,
-          longitude: hotel.longitude
-        },
-        availableRoomCount: hotel.rooms.length
-      };
-    });
-    
-    return NextResponse.json(formattedHotels);
+    }
   } catch (error) {
-    console.error('Get hotels error:', error);
+    console.error('Search hotels error:', error);
     return NextResponse.json(
-      { error: 'Failed to get hotels' },
+      { error: 'Failed to search hotels: ' + error.message },
       { status: 500 }
     );
   }

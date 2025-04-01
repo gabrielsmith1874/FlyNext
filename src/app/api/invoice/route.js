@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
-import { generateInvoice } from '@/lib/pdf';
+import { generateInvoice } from '@/lib/pdf-gen';
 
 export async function GET(request, { params }) {
   try {

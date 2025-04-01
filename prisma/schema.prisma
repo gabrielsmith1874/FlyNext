@@ -2,12 +2,13 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -51,19 +52,21 @@ model Airline {
 }
 
 model FlightBooking {
-  id                String   @id @default(uuid())
-  bookingId         String
-  booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  flightId          String
-  flightNumber      String
-  airline           String
-  origin            String
-  destination       String
-  departureTime     DateTime
-  arrivalTime       DateTime
-  price             Float
-  currency          String
-  status            String
+  id                 String   @id @default(cuid())
+  bookingId          String
+  booking            Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  flightId           String
+  flightNumber       String
+  airline            String
+  origin             String
+  destination        String
+  departureTime      DateTime
+  arrivalTime        DateTime
+  price              Float
+  currency           String
+  status             String
+  isConnectingLeg    Boolean  @default(false)
+  connectionGroupId  String?
 }
 
 model Booking {
@@ -96,14 +99,17 @@ model Payment {
 model Hotel {
   id              String          @id @default(uuid())
   name            String
+  description     String? 
   ownerId         String
-  owner           User            @relation(fields: [ownerId], references: [id])
+  owner           User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   logo            String?
   address         String
   cityId          String
   city            City            @relation(fields: [cityId], references: [id])
   rating          Float
   amenities       String        
+  contactEmail    String
+  contactPhone    String
   images          HotelImage[]
   rooms           Room[]
   latitude        Float?
@@ -132,7 +138,8 @@ model Room {
   amenities   String
   images      RoomImage[]
   bookings    HotelBooking[]
-  availableCount Int @default(1)
+  availableCount Int          @default(1)
+  maxGuests   Int?            // new: maximum number of guests allowed per room
   availability RoomAvailabilityCalendar[]
 }
 
@@ -141,7 +148,7 @@ model RoomAvailabilityCalendar {
   roomId    String
   date      DateTime
   available Int      @default(0)
-  room      Room     @relation(fields: [roomId], references: [id])
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   
   @@unique([roomId, date])
 }
@@ -159,15 +166,16 @@ model HotelBooking {
   bookingId     String
   booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   hotelId       String
-  hotel         Hotel     @relation(fields: [hotelId], references: [id])
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   roomId        String
-  room          Room      @relation(fields: [roomId], references: [id])
+  room          Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)  // Added onDelete: Cascade
   checkInDate   DateTime
   checkOutDate  DateTime
   guestCount    Int
   price         Float
   currency      String    @default("USD")
   status        String    @default("PENDING")
+  guestDetails  String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }

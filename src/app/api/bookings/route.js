@@ -9,99 +9,145 @@ export async function POST(request) {
     // Get and verify token
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
+    
     const token = authHeader.split(' ')[1];
-    const user = await verifyToken(token);
+    console.log("Token received:", token.substring(0, 15) + "...");
+    
+    const decodedToken = await verifyToken(token);
+    if (!decodedToken) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+    
+    console.log("Decoded token user ID:", decodedToken.id);
+    
+    // Verify that the user exists in the database
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: decodedToken.id }
+      });
+      
+      if (!user && decodedToken.email) {
+        // Try to find user by email if ID lookup fails
+        user = await prisma.user.findUnique({
+          where: { email: decodedToken.email }
+        });
+        console.log("User found by email instead of ID");
+      }
+    } catch (dbError) {
+      console.error("Database error when finding user:", dbError);
+      return NextResponse.json({ 
+        error: 'Database error', 
+        details: dbError.message 
+      }, { status: 500 });
+    }
     
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
+      console.log("User not found for ID:", decodedToken.id);
+      console.log("Token payload:", JSON.stringify(decodedToken));
+      return NextResponse.json({ 
+        error: 'User not found',
+        userId: decodedToken.id
+      }, { status: 404 });
     }
-
-    const body = await request.json();
-    const { firstName, lastName, email, passportNumber, flightIds } = body;
-
-    // Use user's stored passport ID if available, otherwise use provided passportNumber
-    const finalPassportNumber = user.passportId || passportNumber;
     
-    // Validate passport number length
-    if (!finalPassportNumber || finalPassportNumber.length !== 9) {
-      return NextResponse.json(
-        { error: 'Passport number must be exactly 9 characters' },
-        { status: 400 }
-      );
-    }
-
+    const body = await request.json();
+    // Log the incoming payload to help debug
+    console.log("Booking payload:", body);
+    const { firstName, lastName, email, passportNumber, flightIds } = body;
+    
     // Validate required fields
     if (!firstName || !lastName || !email || !flightIds || !flightIds.length) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
+    // Use user's stored passport ID if available, otherwise use provided passportNumber
+    const finalPassportNumber = user.passportId || passportNumber;
+    // Validate passport number length (exactly 9 characters)
+    if (!finalPassportNumber || finalPassportNumber.length !== 9) {
+      return NextResponse.json({ error: 'Passport number must be exactly 9 characters' }, { status: 400 });
+    }
+
     // Book flights with AFS
     const afsBooking = await bookFlights({
       firstName,
       lastName,
       email,
-      passportNumber,
+      passportNumber: finalPassportNumber,
       flightIds
     });
     
-    // Calculate total price
+    // Calculate total price from the flight bookings
     const totalPrice = calculateTotalPrice(afsBooking.flights);
     
-    // Create booking in database
-    const booking = await prisma.booking.create({
-      data: {
-        userId: user.id,
-        bookingReference: afsBooking.bookingReference,
-        ticketNumber: afsBooking.ticketNumber,
-        status: 'CONFIRMED',
-        totalPrice,
-        currency: afsBooking.flights[0].currency,
-        flights: {
-          create: afsBooking.flights.map(flight => ({
-            flightId: flight.id,
-            flightNumber: flight.flightNumber,
-            airline: flight.airline.name,
-            origin: flight.origin.code,
-            destination: flight.destination.code,
-            departureTime: new Date(flight.departureTime),
-            arrivalTime: new Date(flight.arrivalTime),
-            price: flight.price,
-            currency: flight.currency,
-            status: flight.status
-          }))
-        }
-      },
-      include: {
-        flights: true
-      }
+    // Check if a pending booking already exists for this user
+    const existingBooking = await prisma.booking.findFirst({
+      where: { userId: user.id, status: 'PENDING' },
+      include: { flights: true, hotelBookings: true }
     });
     
-    // Create notification
-    await prisma.notification.create({
-      data: {
-        userId: user.id,
-        message: `Your flight booking (${booking.bookingReference}) has been confirmed.`,
-        type: 'BOOKING_CONFIRMATION'
-      }
-    });
+    let booking;
+    if (existingBooking) {
+      // Append new flight bookings and update total price
+      booking = await prisma.booking.update({
+        where: { id: existingBooking.id },
+        data: {
+          totalPrice: existingBooking.totalPrice + totalPrice,
+          flights: {
+            create: afsBooking.flights.map(flight => ({
+              flightId: flight.id,
+              flightNumber: flight.flightNumber,
+              airline: typeof flight.airline === 'object' ? flight.airline.name : flight.airline,
+              origin: typeof flight.origin === 'object' ? flight.origin.code : flight.origin,
+              destination: typeof flight.destination === 'object' ? flight.destination.code : flight.destination,
+              departureTime: new Date(flight.departureTime),
+              arrivalTime: new Date(flight.arrivalTime),
+              price: flight.price,
+              currency: flight.currency,
+              status: flight.status,
+              isConnectingLeg: flight.isConnectingLeg || false,
+              connectionGroupId: flight.connectionGroupId || null
+            }))
+          }
+        },
+        include: { flights: true, hotelBookings: true }
+      });
+    } else {
+      // Create new booking
+      booking = await prisma.booking.create({
+        data: {
+          userId: user.id,
+          bookingReference: afsBooking.bookingReference || generateBookingReference(),
+          status: 'PENDING',
+          totalPrice,
+          flights: {
+            create: afsBooking.flights.map(flight => ({
+              flightId: flight.id,
+              flightNumber: flight.flightNumber,
+              airline: typeof flight.airline === 'object' ? flight.airline.name : flight.airline,
+              origin: typeof flight.origin === 'object' ? flight.origin.code : flight.origin,
+              destination: typeof flight.destination === 'object' ? flight.destination.code : flight.destination,
+              departureTime: new Date(flight.departureTime),
+              arrivalTime: new Date(flight.arrivalTime),
+              price: flight.price,
+              currency: flight.currency,
+              status: flight.status,
+              isConnectingLeg: flight.isConnectingLeg || false,
+              connectionGroupId: flight.connectionGroupId || null
+            }))
+          }
+        },
+        include: { flights: true }
+      });
+    }
     
     return NextResponse.json(booking, { status: 201 });
   } catch (error) {
     console.error('Booking error:', error);
     return NextResponse.json(
-      { error: 'Booking failed' },
+      { error: 'Booking failed', details: error.message },
       { status: 500 }
     );
   }
@@ -119,20 +165,69 @@ export async function GET(request) {
     }
 
     const token = authHeader.split(' ')[1];
-    const user = await verifyToken(token);
+    console.log("GET Token received:", token.substring(0, 15) + "...");
     
-    if (!user) {
+    const decodedToken = await verifyToken(token);
+    if (!decodedToken) {
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }
       );
     }
     
+    console.log("GET Decoded token user ID:", decodedToken.id);
+    
+    // Verify that the user exists in the database
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: decodedToken.id }
+      });
+      
+      if (!user && decodedToken.email) {
+        // Try to find user by email if ID lookup fails
+        user = await prisma.user.findUnique({
+          where: { email: decodedToken.email }
+        });
+        console.log("User found by email instead of ID");
+      }
+    } catch (dbError) {
+      console.error("Database error when finding user:", dbError);
+      return NextResponse.json({ 
+        error: 'Database error', 
+        details: dbError.message 
+      }, { status: 500 });
+    }
+    
+    if (!user) {
+      console.log("User not found for ID:", decodedToken.id);
+      console.log("Token payload:", JSON.stringify(decodedToken));
+      return NextResponse.json({ 
+        error: 'User not found',
+        userId: decodedToken.id
+      }, { status: 404 });
+    }
+    
     // Get bookings for user
     const bookings = await prisma.booking.findMany({
       where: { userId: user.id },
       include: {
-        flights: true,
+        flights: {
+          select: {
+            flightId: true,
+            flightNumber: true,
+            airline: true,
+            origin: true,
+            destination: true,
+            departureTime: true,
+            arrivalTime: true,
+            price: true,
+            currency: true,
+            status: true,
+            isConnectingLeg: true,
+            connectionGroupId: true
+          }
+        },
         hotelBookings: {
           include: {
             hotel: true,

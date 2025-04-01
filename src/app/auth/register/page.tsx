@@ -29,7 +29,7 @@ export default function Register() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, role: 'HOTEL_OWNER' }),
       })
 
       const result = await response.json()
@@ -43,7 +43,7 @@ export default function Register() {
       
       toast.success('Registration successful')
       router.push('/')
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.message || 'Registration failed')
     } finally {
       setIsLoading(false)
@@ -68,38 +68,34 @@ export default function Register() {
 
         <div className="bg-card/50 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-border">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  First Name
-                </label>
-                <input
-                  {...register('firstName', { required: 'First name is required' })}
-                  type="text"
-                  className="w-full p-3 rounded-md bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="Enter your first name"
-                />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-destructive">{errors.firstName.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Last Name
-                </label>
-                <input
-                  {...register('lastName', { required: 'Last name is required' })}
-                  type="text"
-                  className="w-full p-3 rounded-md bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="Enter your last name"
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-destructive">{errors.lastName.message}</p>
-                )}
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                First Name
+              </label>
+              <input
+                {...register('firstName', { required: 'First name is required' })}
+                type="text"
+                className="w-full p-3 rounded-md bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                placeholder="Enter your first name"
+              />
+              {errors.firstName && (
+                <p className="mt-1 text-sm text-destructive">{errors.firstName.message}</p>
+              )}
             </div>
-
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Last Name
+              </label>
+              <input
+                {...register('lastName', { required: 'Last name is required' })}
+                type="text"
+                className="w-full p-3 rounded-md bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                placeholder="Enter your last name"
+              />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-destructive">{errors.lastName.message}</p>
+              )}
+            </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Email

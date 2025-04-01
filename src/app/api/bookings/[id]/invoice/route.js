@@ -26,12 +26,27 @@ export async function GET(request, { params }) {
     
     const { id } = params;
     
-    // Get booking with all related data
+    // Get booking with all related data including guest and passenger details
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {
         user: true,
-        flights: true,
+        flights: {
+          select: {
+            id: true,
+            flightId: true,
+            flightNumber: true,
+            airline: true,
+            origin: true,
+            destination: true,
+            departureTime: true,
+            arrivalTime: true,
+            price: true,
+            currency: true,
+            status: true,
+            passengerDetails: true
+          }
+        },
         hotelBookings: {
           include: {
             hotel: true,

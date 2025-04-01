@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchFlights, getCities } from '../../../../../lib/afs-api';
+import { searchFlights, getCities, searchRoundTripFlights } from '../../../../../lib/afs-api';
 import { verifyToken } from '../../../../../lib/auth';
 
 // Create a cache to avoid fetching cities on every request
@@ -45,6 +45,13 @@ async function getCitiesWithCache() {
 async function autoCompleteCity(partialName) {
   if (!partialName) return partialName;
   
+  // New: if input is exactly three letters, assume it's an airport code
+  if (partialName.length === 3 && /^[A-Za-z]{3}$/.test(partialName)) {
+    const code = partialName.toUpperCase();
+    console.log(`Assuming airport code: ${code}`);
+    return code;
+  }
+  
   try {
     const cities = await getCitiesWithCache();
     console.log(`Cities cache has ${cities.length} cities`);
@@ -81,8 +88,8 @@ async function autoCompleteCity(partialName) {
 }
 
 export async function GET(request) {
-
   console.log('GET request to /api/flights/search');
+  
   // Authorization check
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -99,6 +106,10 @@ export async function GET(request) {
     let origin = searchParams.get('from');
     let destination = searchParams.get('to');
     const date = searchParams.get('date');
+    const returnDate = searchParams.get('returnDate');
+    const tripType = searchParams.get('tripType');
+    
+    console.log('Search params:', { origin, destination, date, returnDate, tripType });
     
     // Validate required parameters
     if (!origin || !destination || !date) {
@@ -108,28 +119,39 @@ export async function GET(request) {
       );
     }
     
-    // Autocomplete city names
+    // Autocomplete city names if needed
     origin = await autoCompleteCity(origin);
     destination = await autoCompleteCity(destination);
     
-    console.log(`Searching flights from ${origin} to ${destination} on ${date}`);
-    
-    try {
-      // Search flights
-      const data = await searchFlights(origin, destination, date);
-      // Extract flights array from the returned data
-      let flights = data?.results ?? data;
-      if (!Array.isArray(flights)) flights = [];
+    // Handle round trip searches
+    if (tripType === 'round-trip' && returnDate) {
+      console.log(`Searching round-trip flights from ${origin} to ${destination} on ${date} with return on ${returnDate}`);
       
-      // Wrap the flights in the expected structure and respond with it
-      return NextResponse.json({ results: [{ legs: 1, flights }] });
-    } catch (searchError) {
-      // For city not found or other API-specific errors, return empty results
-      console.log('Flight search found no results or city not found:', searchError.message);
-      return NextResponse.json({ results: [] });
+      try {
+        const data = await searchRoundTripFlights(origin, destination, date, returnDate);
+        // Ensure data is safe
+        const outbound = Array.isArray(data?.outbound) ? data.outbound : [];
+        const ret = Array.isArray(data?.returnFlights) ? data.returnFlights : []; // updated key
+        console.log(`Round-trip search results: outbound=${outbound.length}, returnFlights=${ret.length}`);
+        return NextResponse.json({ outbound, returnFlights: ret });
+      } catch (searchError) {
+        console.error('Round-trip search error:', searchError);
+        return NextResponse.json({ error: searchError.message }, { status: 500 });
+      }
+    } else {
+      // For one-way flights, continue with your existing code
+      console.log(`Searching one-way flights from ${origin} to ${destination} on ${date}`);
+      
+      try {
+        const data = await searchFlights(origin, destination, date);
+        return NextResponse.json(data);
+      } catch (searchError) {
+        console.error('Flight search error:', searchError);
+        return NextResponse.json({ results: [] });
+      }
     }
   } catch (error) {
-    console.error('Flight search error:', error);
+    console.error('API route error:', error);
     return NextResponse.json(
       { error: 'Failed to search flights' },
       { status: 500 }

@@ -1,95 +1,155 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { authenticate, verifyToken } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth';
+import fs from 'fs';
+import path from 'path';
 
 export async function POST(request, { params }) {
   try {
-    // Extract user from headers set by middleware
-    const userId = request.headers.get('x-user-id');
-    const userEmail = request.headers.get('x-user-email');
-    const userRole = request.headers.get('x-user-role');
-    
-    // If we have headers from middleware, use them
-    let user = null;
-    if (userId && userEmail && userRole) {
-      user = { id: userId, email: userEmail, role: userRole };
-    } 
-    // Fallback to manual token extraction
-    else {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        user = verifyToken(token); // Use the imported verifyToken
-      }
-    }
+    // Await params before destructuring
+    const resolvedParams = await params;
+    const { id: hotelId } = resolvedParams;
 
-    if (!user) {
+    // Get and verify token
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
-    
-    const { id: hotelId } = params;
-    
+
+    const token = authHeader.split(' ')[1];
+    const user = await verifyToken(token);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
     // Get hotel
     const hotel = await prisma.hotel.findUnique({
       where: { id: hotelId }
     });
-    
+
     if (!hotel) {
       return NextResponse.json(
         { error: 'Hotel not found' },
         { status: 404 }
       );
     }
-    
-    // Check if hotel belongs to user
+
+    // Check if user is hotel owner or admin
     if (hotel.ownerId !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
       );
     }
+
+    // Get form data instead of JSON
+    const formData = await request.formData();
     
-    const body = await request.json();
-    const { type, description, price, currency, amenities, images, quantity } = body;
-    
-    // Validate required fields
-    if (!type || !description || !price || !amenities) {
+    // Extract and validate the data
+    const type = formData.get('type');
+    const description = formData.get('description');
+    const price = parseFloat(formData.get('price'));
+    const currency = formData.get('currency') || 'USD';
+    const amenities = formData.get('amenities') || '';
+    const availableCount = parseInt(formData.get('availableCount')) || 1;
+    const maxGuestsRaw = formData.get('maxGuests');
+    const maxGuests = maxGuestsRaw ? parseInt(maxGuestsRaw.toString()) : null;
+    const images = formData.getAll('images');
+
+    // Basic validation
+    if (!type || !description || isNaN(price)) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing or invalid required fields' },
         { status: 400 }
       );
     }
-    
-    // Create room
-    const room = await prisma.room.create({
-      data: {
-        hotelId,
-        type,
-        description,
-        price,
-        currency: currency || 'USD',
-        amenities,
-        availableCount: quantity || 1, // Set initial available count
-        images: {
-          create: images?.map(image => ({
-            url: image.url,
-            caption: image.caption
-          })) || []
+
+    // Process images from form data
+    console.log('Images from form data:', images);
+    const imageUrls = [];
+
+    // Process each image
+    for (const img of images) {
+      if (typeof img === 'string' && img.trim() !== '') {
+        // It's already a URL string
+        imageUrls.push(img);
+      } else if (img instanceof File) {
+        try {
+          // Ensure upload directory exists
+          const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'rooms');
+          fs.mkdirSync(uploadsDir, { recursive: true });
+          
+          // Generate a unique filename
+          const fileName = `${Date.now()}-${img.name}`;
+          const filePath = path.join(uploadsDir, fileName);
+          
+          // Convert File object to ArrayBuffer
+          const arrayBuffer = await img.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          
+          // Write file to disk
+          fs.writeFileSync(filePath, buffer);
+          
+          // Create URL path that will be accessible from the browser
+          const uploadedUrl = `/uploads/rooms/${fileName}`;
+          imageUrls.push(uploadedUrl);
+          
+          console.log(`Saved file to: ${filePath}`);
+          console.log(`Created URL: ${uploadedUrl}`);
+        } catch (error) {
+          console.error(`Error saving file ${img.name}:`, error);
         }
-      },
-      include: {
-        images: true
       }
+    }
+
+    console.log('Processed image URLs:', imageUrls);
+
+    // Create room with images in a transaction
+    const room = await prisma.$transaction(async (tx) => {
+      // First create the room
+      const newRoom = await tx.room.create({
+        data: {
+          hotelId,
+          type,
+          description,
+          price,
+          currency,
+          amenities,
+          availableCount,
+          maxGuests,
+        },
+      });
+      
+      // Then create image records if we have any valid image URLs
+      if (imageUrls.length > 0) {
+        await tx.roomImage.createMany({
+          data: imageUrls.map(url => ({
+            roomId: newRoom.id,
+            url: url,
+          })),
+        });
+      }
+      
+      // Return the created room with its images
+      return tx.room.findUnique({
+        where: { id: newRoom.id },
+        include: { images: true }
+      });
     });
-    
+
     return NextResponse.json(room, { status: 201 });
+
   } catch (error) {
     console.error('Create room error:', error);
     return NextResponse.json(
-      { error: 'Failed to create room' },
+      { error: 'Failed to create room', details: error.message },
       { status: 500 }
     );
   }
@@ -97,256 +157,91 @@ export async function POST(request, { params }) {
 
 export async function GET(request, { params }) {
   try {
-    const { id: hotelId } = params;
+    const resolvedParams = await params;
+    const { id: hotelId } = resolvedParams;
     const { searchParams } = new URL(request.url);
     
-    // Get date range parameters
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const roomType = searchParams.get('roomType');
+    // New query parameters for availability view
+    const startDateStr = searchParams.get('startDate');
+    const endDateStr = searchParams.get('endDate');
+    const status = searchParams.get('status');
+    const roomTypeFilter = searchParams.get('roomType'); // existing
     
-    // Validate required parameters
-    if (!startDate || !endDate) {
-      return NextResponse.json(
-        { error: 'Missing required parameters: startDate and endDate' },
-        { status: 400 }
-      );
-    }
-
-    // Parse dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    // Validate date format
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return NextResponse.json(
-        { error: 'Invalid date format. Use YYYY-MM-DD format' },
-        { status: 400 }
-      );
-    }
-    
-    // Validate date range
-    if (end < start) {
-      return NextResponse.json(
-        { error: 'End date must be after start date' },
-        { status: 400 }
-      );
-    }
-    
-    // First, check if user is authorized
-    const userId = request.headers.get('x-user-id');
-    const userEmail = request.headers.get('x-user-email'); 
-    const userRole = request.headers.get('x-user-role');
-    
-    // Get user info through middleware headers or auth token
-    let user = null;
-    if (userId && userEmail && userRole) {
-      user = { id: userId, email: userEmail, role: userRole };
-    } 
-    // Fallback to manual token extraction
-    else {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        user = verifyToken(token);
+    // NEW: If startDate and endDate are provided, perform availability aggregation per room type
+    if (startDateStr && endDateStr) {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || endDate < startDate) {
+        return NextResponse.json(
+          { error: 'Invalid date range. Ensure valid dates and that endDate is after startDate.' },
+          { status: 400 }
+        );
       }
-    }
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    // Get hotel
-    const hotel = await prisma.hotel.findUnique({
-      where: { id: hotelId }
-    });
-    
-    if (!hotel) {
-      return NextResponse.json(
-        { error: 'Hotel not found' },
-        { status: 404 }
-      );
-    }
-    
-    // Check if user is the hotel owner or admin
-    if (hotel.ownerId !== user.id && user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden - You do not own this hotel' },
-        { status: 403 }
-      );
-    }
-    
-    // Build the query to get rooms based on filters
-    let whereClause = {
-      hotelId
-    };
-    
-    if (roomType) {
-      whereClause.type = roomType;
-    }
-    
-    // Get all rooms matching the criteria
-    // FIXED: Use the correct relation name 'bookings' instead of 'hotelBookings'
-    const rooms = await prisma.room.findMany({
-      where: whereClause,
-      include: {
-        bookings: {
-          where: {
-            OR: [
-              {
-                // Bookings that start within the date range
-                checkInDate: {
-                  gte: start,
-                  lte: end
-                }
-              },
-              {
-                // Bookings that end within the date range
-                checkOutDate: {
-                  gte: start,
-                  lte: end
-                }
-              },
-              {
-                // Bookings that span the entire date range
-                checkInDate: { lte: start },
-                checkOutDate: { gte: end }
-              }
-            ],
-            booking: {
-              status: 'CONFIRMED'  // Only count confirmed bookings
-            }
-          },
-          include: {
-            booking: true
-          }
-        }
-      }
-    });
-    
-    // Calculate days in the range
-    const daysInRange = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    
-    // Process room availability data
-    const roomAvailability = rooms.map(room => {
-      // Create a map of bookings per day
-      const bookingsByDay = {};
-      const dateArray = getDatesInRange(start, end);
       
-      // Initialize all dates with zero bookings
-      dateArray.forEach(date => {
-        bookingsByDay[date] = 0;
+      // Query rooms for the hotel with optional room type filter
+      const rooms = await prisma.room.findMany({
+        where: {
+          hotelId,
+          ...(roomTypeFilter ? { type: { contains: roomTypeFilter } } : {})
+        }
       });
       
-      // Count bookings for each day
-      // FIXED: Use the correct relation name 'bookings' instead of 'hotelBookings'
-      room.bookings.forEach(booking => {
-        const bookingStart = new Date(booking.checkInDate);
-        const bookingEnd = new Date(booking.checkOutDate);
-        
-        // Count each day of this booking
-        dateArray.forEach(date => {
-          const currentDate = new Date(date);
-          if (currentDate >= bookingStart && currentDate < bookingEnd) {
-            bookingsByDay[date]++;
+      // For each room get confirmed booking count over the date range
+      const roomData = await Promise.all(rooms.map(async (room) => {
+        const bookingCount = await prisma.hotelBooking.count({
+          where: {
+            roomId: room.id,
+            booking: { status: 'CONFIRMED' },
+            checkInDate: { lte: endDate },
+            checkOutDate: { gt: startDate }
           }
         });
-      });
-      
-      // Calculate statistics
-      const totalBookedRoomDays = Object.values(bookingsByDay).reduce((sum, count) => sum + count, 0);
-      const totalPossibleRoomDays = room.availableCount * daysInRange;
-      const occupancyRate = totalPossibleRoomDays > 0 ? 
-        (totalBookedRoomDays / totalPossibleRoomDays) * 100 : 0;
-      
-      // Return formatted data
-      return {
-        roomId: room.id,
-        roomType: room.type,
-        availableCount: room.availableCount,
-        totalBookings: room.bookings.length, // FIXED: Use the correct relation name
-        occupancyRate: parseFloat(occupancyRate.toFixed(2)),
-        dailyAvailability: dateArray.map(date => ({
-          date,
-          booked: bookingsByDay[date],
-          available: room.availableCount - bookingsByDay[date]
-        }))
-      };
-    });
-    
-    // Group by room type if needed
-    let response = roomAvailability;
-    if (!roomType) {
-      const groupedByType = {};
-      roomAvailability.forEach(room => {
-        if (!groupedByType[room.roomType]) {
-          groupedByType[room.roomType] = {
-            roomType: room.roomType,
-            rooms: []
-          };
-        }
-        groupedByType[room.roomType].rooms.push(room);
-      });
-      
-      // Calculate aggregate stats for each room type
-      response = Object.values(groupedByType).map(group => {
-        const totalAvailableCount = group.rooms.reduce((sum, room) => sum + room.availableCount, 0);
-        const totalBookings = group.rooms.reduce((sum, room) => sum + room.totalBookings, 0);
-        const avgOccupancyRate = group.rooms.length > 0 ? 
-          group.rooms.reduce((sum, room) => sum + room.occupancyRate, 0) / group.rooms.length : 0;
-          
-        // Merge daily availability for all rooms of this type
-        const mergedDailyAvailability = {};
-        
-        if (group.rooms.length > 0 && group.rooms[0].dailyAvailability) {
-          group.rooms[0].dailyAvailability.forEach(day => {
-            mergedDailyAvailability[day.date] = {
-              date: day.date,
-              booked: 0,
-              available: 0
-            };
-          });
-          
-          group.rooms.forEach(room => {
-            room.dailyAvailability.forEach(day => {
-              mergedDailyAvailability[day.date].booked += day.booked;
-              mergedDailyAvailability[day.date].available += day.available;
-            });
-          });
-        }
-        
         return {
-          roomType: group.roomType,
-          totalRooms: group.rooms.length,
-          totalAvailableCount,
-          totalBookings,
-          averageOccupancyRate: parseFloat(avgOccupancyRate.toFixed(2)),
-          dailyAvailability: Object.values(mergedDailyAvailability)
+          roomType: room.type,
+          capacity: room.availableCount,
+          booked: bookingCount
         };
-      });
+      }));
+      
+      // Aggregate availability per room type
+      const aggregated = roomData.reduce((acc, cur) => {
+        if (!acc[cur.roomType]) {
+          acc[cur.roomType] = { roomType: cur.roomType, totalRooms: 0, totalCapacity: 0, totalBooked: 0 };
+        }
+        acc[cur.roomType].totalRooms += 1;
+        acc[cur.roomType].totalCapacity += cur.capacity;
+        acc[cur.roomType].totalBooked += cur.booked;
+        return acc;
+      }, {});
+      
+      return NextResponse.json(Object.values(aggregated));
     }
     
-    return NextResponse.json({
-      hotel: {
-        id: hotel.id,
-        name: hotel.name
-      },
-      dateRange: {
-        startDate,
-        endDate,
-        totalDays: daysInRange
-      },
-      availability: response
+    // Fallback: initialize "where" and then add optional filters
+    let where = {};
+    if (status) {
+      where.status = { contains: status };
+    }
+    
+    if (roomTypeFilter) {
+      // Filter by room type substring match. Case-insensitivity is not supported in this Prisma version.
+      where.room = { type: { contains: roomTypeFilter } };
+    }
+    
+    const bookings = await prisma.hotelBooking.findMany({
+      where,
+      include: {
+        booking: true,
+        room: true
+      }
     });
     
+    return NextResponse.json(bookings);
+    
   } catch (error) {
-    console.error('Get room availability error:', error);
-    console.error('Error stack:', error.stack);
+    console.error('Search bookings error:', error);
     return NextResponse.json(
-      { error: 'Failed to get room availability', details: error.message },
+      { error: 'Failed to search bookings', details: error.message },
       { status: 500 }
     );
   }
@@ -367,7 +262,10 @@ function getDatesInRange(startDate, endDate) {
 
 export async function PATCH(request, { params }) {
   try {
-    const { id: hotelId } = params;
+    // Await params before destructuring
+    const resolvedParams = await params;
+    const { id: hotelId } = resolvedParams;
+
     const body = await request.json();
     const { availableCount, startDate, endDate } = body;
 
@@ -575,16 +473,18 @@ export async function PATCH(request, { params }) {
             }
           }
         }
+        console.log(`Cancelling ${bookingsToCancel} bookings due to excess availability on selected dates`);
         
         // Cancel the selected bookings
         if (bookingsToCancel.size > 0) {
           await prisma.booking.updateMany({
-            where: {
-              id: { in: Array.from(bookingsToCancel) }
-            },
-            data: { 
-              status: 'CANCELLED'
-            }
+            where: { id: { in: Array.from(bookingsToCancel) } },
+            data: { status: 'CANCELLED' }
+          });
+          // NEW: Update associated hotel booking records
+          await prisma.hotelBooking.updateMany({
+            where: { bookingId: { in: Array.from(bookingsToCancel) } },
+            data: { status: 'CANCELLED' }
           });
         }
       }
@@ -636,23 +536,123 @@ export async function PATCH(request, { params }) {
         }
       });
 
-      // Calculate how many bookings need to be canceled
+      console.log(`Found ${activeHotelBookings} active bookings for room ${roomId}`);
+
       const bookedCount = activeHotelBookings.length;
+
+      // If the new availability is 0, cancel all bookings
+      if (newAvailableCount === 0) {
+        console.log('Cancelling all bookings as room availability is set to 0');
+
+        // Use a transaction to ensure both booking and hotelBooking updates complete
+        await prisma.$transaction(async (tx) => {
+          // Find all hotel bookings for this room, regardless of their current status
+          const activeBookings = await tx.hotelBooking.findMany({
+            where: {
+              roomId: roomId,
+            },
+            select: {
+              id: true,
+              bookingId: true,
+              status: true
+            }
+          });
+
+          console.log(`Found ${activeBookings.length} hotel bookings to process`);
+          
+          // Extract booking IDs
+          const bookingIds = activeBookings.map(booking => booking.bookingId);
+          
+          // Cancel all hotel bookings for this room
+          const hotelCancellationResult = await tx.hotelBooking.updateMany({
+            where: {
+              roomId: roomId,
+            },
+            data: { status: 'CANCELLED' }
+          });
+          
+          console.log(`Updated ${hotelCancellationResult.count} hotel bookings to CANCELLED`);
+
+          // Also cancel the parent booking records
+          if (bookingIds.length > 0) {
+            const bookingCancellationResult = await tx.booking.updateMany({
+              where: {
+                id: { in: bookingIds }
+              },
+              data: { status: 'CANCELLED' }
+            });
+            
+            console.log(`Updated ${bookingCancellationResult.count} parent bookings to CANCELLED`);
+          }
+          
+          // Update the room's available count to 0
+          const updatedRoom = await tx.room.update({
+            where: {
+              id: roomId,
+              hotelId: hotelId
+            },
+            data: { availableCount: 0 }
+          });
+          
+          return updatedRoom;
+        });
+
+        // Get the updated room to return in the response
+        const updatedRoom = await prisma.room.findUnique({
+          where: { id: roomId }
+        });
+
+        return NextResponse.json({
+          ...updatedRoom,
+          cancelledBookings: { 
+            count: activeHotelBookings.length, 
+            message: `Cancelled all ${activeHotelBookings.length} bookings as room availability is set to 0` 
+          }
+        });
+      }
 
       // If the new availability is less than the current bookings, cancel some bookings
       if (newAvailableCount < bookedCount) {
+        // Improve the cancellation logic - order by created date to cancel most recent first
         const bookingsToCancel = bookedCount - newAvailableCount;
+        
+        // Select bookings to cancel (most recent ones)
         const bookingsToCancelList = activeHotelBookings.slice(0, bookingsToCancel);
         
-        // Update the status of these bookings to CANCELLED
-        await Promise.all(bookingsToCancelList.map(hotelBooking => 
-          prisma.booking.update({
-            where: { id: hotelBooking.booking.id },
-            data: { 
-              status: 'CANCELLED'
+        // Extract the authorization token from the incoming request
+        const authHeader = request.headers.get('authorization');
+        
+        // Use the booking cancellation API for each booking instead of direct DB update
+        const cancellationPromises = bookingsToCancelList.map(async (hotelBooking) => {
+          try {
+            // Call the booking cancellation endpoint for proper cancellation process
+            const cancelResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/bookings/${hotelBooking.booking.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': authHeader,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (!cancelResponse.ok) {
+              const errorText = await cancelResponse.text();
+              console.error(`Failed to cancel booking ${hotelBooking.booking.id}: ${errorText}`);
+              return { id: hotelBooking.booking.id, success: false, error: errorText };
             }
-          })
-        ));
+            
+            return { id: hotelBooking.booking.id, success: true };
+          } catch (error) {
+            console.error(`Error cancelling booking ${hotelBooking.booking.id}:`, error);
+            return { id: hotelBooking.booking.id, success: false, error: error.message };
+          }
+        });
+        
+        // Wait for all cancellation requests to complete
+        const cancellationResults = await Promise.all(cancellationPromises);
+        
+        // Log the results
+        const successfulCancellations = cancellationResults.filter(r => r.success).length;
+        console.log(`Successfully cancelled ${successfulCancellations} out of ${bookingsToCancel} bookings`);
       }
 
       // Update the room's available count
@@ -674,6 +674,128 @@ export async function PATCH(request, { params }) {
     console.error('Error updating room:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message }, 
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request, { params }) {
+  try {
+    // Await params before destructuring
+    const resolvedParams = await params;
+    const { id: hotelId } = resolvedParams;
+
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.split(' ')[1];
+    const user = verifyToken(token);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Fix: Extract roomId from URL properly
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const roomId = pathParts[pathParts.length - 1];
+
+    // Get hotel
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: hotelId },
+      include: { rooms: true }
+    });
+
+    if (!hotel) {
+      return NextResponse.json(
+        { error: 'Hotel not found' },
+        { status: 404 }
+      );
+    }
+
+    // Verify the room exists in this hotel
+    const roomExists = hotel.rooms.some(room => room.id === roomId);
+    if (!roomExists) {
+      return NextResponse.json(
+        { error: 'Room not found in this hotel' },
+        { status: 404 }
+      );
+    }
+
+    // Get request body
+    const formData = await request.formData();
+    const type = formData.get('type');
+    const description = formData.get('description');
+    const price = parseFloat(formData.get('price'));
+    const currency = formData.get('currency') || 'USD';
+    const amenities = formData.get('amenities');
+    const availableCount = parseInt(formData.get('availableCount'));
+    const maxGuestsRaw = formData.get('maxGuests');
+    const maxGuests = maxGuestsRaw ? parseInt(maxGuestsRaw.toString()) : null;
+    
+    // Get image URLs from form data
+    const images = formData.getAll('images');
+    console.log('PUT - Images from form data:', images); // Debug log
+    const imageUrls = images.filter(img => img && typeof img === 'string' && img.trim() !== '');
+    console.log('PUT - Filtered image URLs:', imageUrls); // Debug log
+
+    // Update room with images in a transaction
+    const updatedRoom = await prisma.$transaction(async (tx) => {
+      // First update the room data
+      const room = await tx.room.update({
+        where: {
+          id: roomId,
+          hotelId: hotelId // Ensure room belongs to this hotel
+        },
+        data: {
+          type,
+          description,
+          price,
+          currency,
+          amenities,
+          availableCount,
+          maxGuests,
+        },
+      });
+
+      // Only handle image updates if images are explicitly provided in the form
+      if (formData.has('images')) {
+        if (imageUrls.length > 0) {
+          // First delete existing images
+          await tx.roomImage.deleteMany({
+            where: { roomId: roomId }
+          });
+
+          // Then create new image records
+          await tx.roomImage.createMany({
+            data: imageUrls.map(url => ({
+              roomId: roomId,
+              url: url
+            }))
+          });
+        }
+      }
+      
+      // Return the updated room with its images
+      return tx.room.findUnique({
+        where: { id: roomId },
+        include: { images: true }
+      });
+    });
+
+    return NextResponse.json(updatedRoom);
+
+  } catch (error) {
+    console.error('Error updating room:', error);
+    return NextResponse.json(
+      { error: 'Failed to update room', details: error.message },
       { status: 500 }
     );
   }

@@ -6,11 +6,14 @@ import { toast } from 'react-hot-toast'
 import { UserIcon, KeyIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 
+
+
 interface ProfileForm {
   firstName: string
   lastName: string
   email: string
   phone: string
+  profilePicture?: string // Add this field to include profile image
 }
 
 interface PasswordForm {
@@ -97,7 +100,12 @@ export default function Profile() {
 
   const onSubmitProfile = async (data: ProfileForm) => {
     try {
-      await updateProfileClient(data)
+      // Include the profileImage in the data sent to the API
+      const updatedData = {
+        ...data,
+        profilePicture: profileImage || undefined
+      };
+      await updateProfileClient(updatedData)
       toast.success('Profile updated successfully')
     } catch (error) {
       toast.error('Failed to update profile')

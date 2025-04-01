@@ -210,7 +210,8 @@ export async function PUT(request) {
     if (firstName !== undefined) updateData.firstName = firstName;
     if (lastName !== undefined) updateData.lastName = lastName;
     if (phone !== undefined) updateData.phone = phone;
-    if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
+    // Only update profile picture if it's provided and not null
+    if (profilePicture !== undefined && profilePicture !== null) updateData.profilePicture = profilePicture;
     if (passportId !== undefined) updateData.passportId = passportId;
     if (email !== undefined) updateData.email = email;
 
@@ -237,6 +238,8 @@ export async function PUT(request) {
       }
       updateData.password = await hashPassword(newPassword);
     }
+
+    console.log('Received data:', updateData);
 
     // Update user
     const updatedUser = await prisma.user.update({

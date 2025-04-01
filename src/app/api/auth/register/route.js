@@ -11,7 +11,7 @@ const registerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   passportId: z.string().length(9, 'Passport ID must be exactly 9 characters'),
   phone: z.string().optional(),
-  role: z.enum(['USER', 'ADMIN']).optional().default('USER')
+  role: z.enum(['USER', 'HOTEL_OWNER', 'ADMIN']).optional().default('USER')
 });
 
 export async function POST(request) {
@@ -36,11 +36,12 @@ export async function POST(request) {
     // Hash password
     const hashedPassword = await hashPassword(validatedData.password);
     
-    // Create user
+    // Create user with role set to HOTEL_OWNER
     const user = await prisma.user.create({
       data: {
         ...validatedData,
-        password: hashedPassword
+        password: hashedPassword,
+        role: 'HOTEL_OWNER' // Force role to HOTEL_OWNER
       }
     });
     

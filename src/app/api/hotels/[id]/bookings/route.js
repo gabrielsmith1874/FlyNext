@@ -7,28 +7,21 @@ export async function GET(request, { params }) {
     // Extract hotel ID from params
     const { id: hotelId } = params;
     
-    // Extract user from headers or token
-    const userId = request.headers.get('x-user-id');
-    const userEmail = request.headers.get('x-user-email');
-    const userRole = request.headers.get('x-user-role');
-    
-    // If we have headers from middleware, use them
-    let user = null;
-    if (userId && userEmail && userRole) {
-      user = { id: userId, email: userEmail, role: userRole };
-    } 
-    // Fallback to manual token extraction
-    else {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        user = verifyToken(token);
-      }
-    }
-
-    if (!user) {
+    // Get and verify token
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.split(' ')[1];
+    const user = await verifyToken(token);
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
         { status: 401 }
       );
     }
@@ -53,71 +46,84 @@ export async function GET(request, { params }) {
       );
     }
     
-    // Extract filter parameters
+    // Extract filter parameters without defaulting if they aren’t provided
     const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const roomType = searchParams.get('roomType');
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+    const statusParam = searchParams.get('status');
     
-    // Build filter
-    const filter = {
-      hotelId,
-    };
-    
-    // Date filters
-    if (startDate) {
-      filter.checkInDate = {
-        gte: new Date(startDate)
-      };
-    }
-    
-    if (endDate) {
-      filter.checkOutDate = {
-        lte: new Date(endDate)
-      };
-    }
-    
-    // If roomType is provided, include it in the database query
-    if (roomType) {
-        filter.room = {
-            is: {
-                type: {
-                    contains: roomType,
-                    mode: 'insensitive'
-                }
-            }
-        };
-    }
-    
-    // Get bookings with filters
-    const bookings = await prisma.hotelBooking.findMany({
-      where: {
-        hotelId,
-        checkInDate: { gte: new Date(startDate) },
-        checkOutDate: { lte: new Date(endDate) },
-        room: {
-          is: {
-            type: {
-              contains: "Deluxe Suite"
-            }
+    // Build booking filter only if filters are provided
+    const bookingFilter = {};
+    if (startDateParam && endDateParam) {
+      bookingFilter.OR = [
+        {
+          checkInDate: {
+            gte: new Date(startDateParam)
+          },
+          checkInDate: {
+            lte: new Date(endDateParam)
           }
+        },
+        {
+          checkOutDate: {
+            gte: new Date(startDateParam)
+          },
+          checkOutDate: {
+            lte: new Date(endDateParam)
+          }
+        },
+        {
+          checkInDate: { lte: new Date(startDateParam) },
+          checkOutDate: { gte: new Date(endDateParam) }
         }
-      },
+      ];
+    }
+    if (statusParam) {
+      bookingFilter.status = statusParam;
+    }
+    
+    // Get rooms with bookings (if no filter provided, bookingFilter remains empty and returns all bookings)
+    const roomsWithBookings = await prisma.room.findMany({
+      where: { hotelId },
       include: {
-        booking: {
+        bookings: {
+          where: {
+            ...bookingFilter
+          },
           include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true
+            booking: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    email: true
+                  }
+                }
               }
             }
           }
-        },
-        room: true
+        }
       }
     });
+    
+    // Flatten bookings from rooms and attach room information
+    const bookings = roomsWithBookings.flatMap(room => 
+      room.bookings.map(booking => ({
+        ...booking,
+        room: {
+          id: room.id,
+          type: room.type,
+          hotelId: room.hotelId,
+          description: room.description,
+          price: room.price,
+          currency: room.currency,
+          amenities: room.amenities,
+          availableCount: room.availableCount,
+          maxGuests: room.maxGuests
+        }
+      }))
+    );
     
     return NextResponse.json(bookings);
   } catch (error) {

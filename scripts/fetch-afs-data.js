@@ -7,8 +7,8 @@ require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const AFS_API_KEY = process.env.AFS_API_KEY;
-const AFS_BASE_URL = process.env.AFS_BASE_URL;
+const AFS_API_KEY = process.env.AFS_API_KEY || "0da1159fbf062d8e8b4650679aa39a7aefbcb6b3f6a455a0acc7345b8fb65a05";
+const AFS_BASE_URL = process.env.AFS_BASE_URL || 'http://afs-main:3001';
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 /**

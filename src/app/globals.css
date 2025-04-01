@@ -46,3 +46,42 @@
   --input: 180 25% 20%;
   --ring: 171 82% 60%;
 }
+
+/* DateRangePicker styles */
+.custom-day-picker {
+  --rdp-accent-color: var(--primary);
+  --rdp-background-color: var(--primary-foreground);
+  font-family: var(--font-sans);
+  margin: 0 auto;
+}
+
+.custom-day-picker .rdp-day:hover:not([disabled]) {
+  background-color: hsl(var(--primary) / 0.1);
+  color: var(--foreground);
+}
+
+.custom-day-picker .rdp-day_today {
+  font-weight: bold;
+  border: 1px solid hsl(var(--primary) / 0.5);
+}
+
+.custom-day-picker .rdp-day_selected {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.custom-day-picker .rdp-day_selected:hover {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+.custom-day-picker .rdp-day_range_start, 
+.custom-day-picker .rdp-day_range_end {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: 50%;
+}
+
+.custom-day-picker .rdp-day_range_middle {
+  background-color: hsl(var(--primary) / 0.2);
+  color: var(--foreground);
+}
