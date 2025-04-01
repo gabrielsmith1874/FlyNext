@@ -1,0 +1,1625 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0",
+    "title": "FlyNext API Collection",
+    "description": "A collection of API endpoints for the FlyNext flight and hotel booking platform",
+    "contact": {}
+  },
+  "host": "localhost:3000",
+  "basePath": "/api",
+  "securityDefinitions": {},
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "description": "Register a new user account",
+        "summary": "Register User",
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "RegisterUser",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/RegisterUserRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "description": "Login as regular user",
+        "summary": "Login User",
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "LoginUser",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/LoginUserRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "get": {
+        "description": "Get the current user's profile",
+        "summary": "Get User Profile",
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "GetUserProfile",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      },
+      "put": {
+        "description": "Update the current user's profile information",
+        "summary": "Update User Profile",
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "UpdateUserProfile",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/UpdateUserProfileRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/cities": {
+      "get": {
+        "description": "Get all available cities",
+        "summary": "Get Cities",
+        "tags": [
+          "Flight Management"
+        ],
+        "operationId": "GetCities",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/airports": {
+      "get": {
+        "description": "Get all available airports",
+        "summary": "Get Airports",
+        "tags": [
+          "Flight Management"
+        ],
+        "operationId": "GetAirports",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/airlines": {
+      "get": {
+        "description": "Get all available airlines",
+        "summary": "Get Airlines",
+        "tags": [
+          "Flight Management"
+        ],
+        "operationId": "GetAirlines",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/flights/search": {
+      "get": {
+        "description": "Search for flights based on origin, destination, and date",
+        "summary": "Search Flights",
+        "tags": [
+          "Flight Management"
+        ],
+        "operationId": "SearchFlights",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": ""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/bookings": {
+      "post": {
+        "description": "Book flights",
+        "summary": "Book Flight",
+        "tags": [
+          "Flight Management"
+        ],
+        "operationId": "BookFlight",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/BookFlightRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      },
+      "get": {
+        "description": "Get all bookings for the current user",
+        "summary": "Get User Bookings",
+        "tags": [
+          "Booking Management"
+        ],
+        "operationId": "GetUserBookings",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/hotels": {
+      "get": {
+        "description": "Get hotels with optional filters",
+        "summary": "Get Hotels",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "GetHotels",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "cityId",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "minRating",
+            "in": "query",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "description": ""
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "description": ""
+          },
+          {
+            "name": "amenities",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": ""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new hotel with all the necessary details. This automatically retrieves the hotel owner's ID from their profile and a valid cityId from the cities API.",
+        "summary": "Create Hotel",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "CreateHotel",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/CreateHotelRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/hotels/60455486-5717-468e-b6f2-9587d926644f": {
+      "get": {
+        "description": "Get detailed information about a specific hotel",
+        "summary": "Get Hotel by ID",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "GetHotelbyID",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      },
+      "put": {
+        "description": "Update an existing hotel. Authentication is done via the hotel owner's JWT token, which is automatically used to determine ownership.",
+        "summary": "Update Hotel",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "UpdateHotel",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/UpdateHotelRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/hotels/": {
+      "delete": {
+        "description": "Delete a hotel. Only the hotel owner or an admin can delete a hotel. Authentication is strictly via the Bearer token in the Authorization header.",
+        "summary": "Delete Hotel",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "DeleteHotel",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/hotels/60455486-5717-468e-b6f2-9587d926644f/rooms": {
+      "post": {
+        "description": "Create a new room in the specified hotel. The room ID will be stored in the roomId variable for use in other requests.",
+        "summary": "Create Room",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "CreateRoom",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/CreateRoomRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      },
+      "patch": {
+        "description": "Update room availability",
+        "summary": "Update Room Availability",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "UpdateRoomAvailability",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/UpdateRoomAvailabilityRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/hotels/bookings": {
+      "post": {
+        "description": "Book a hotel room",
+        "summary": "Book Hotel Room",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "BookHotelRoom",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/BookHotelRoomRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/hotels/60455486-5717-468e-b6f2-9587d926644f/bookings": {
+      "get": {
+        "description": "Get bookings for a specific hotel (requires hotel owner access)",
+        "summary": "Get Hotel Bookings",
+        "tags": [
+          "Hotel Management"
+        ],
+        "operationId": "GetHotelBookings",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "roomType",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": ""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/bookings/history": {
+      "get": {
+        "description": "Get booking history for the current user",
+        "summary": "Get Booking History",
+        "tags": [
+          "Booking Management"
+        ],
+        "operationId": "GetBookingHistory",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/bookings/": {
+      "get": {
+        "description": "Get details for a specific booking",
+        "summary": "Get Booking by ID",
+        "tags": [
+          "Booking Management"
+        ],
+        "operationId": "GetBookingbyID",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      },
+      "delete": {
+        "description": "Cancel a booking",
+        "summary": "Cancel Booking",
+        "tags": [
+          "Booking Management"
+        ],
+        "operationId": "CancelBooking",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "description": "Get all notifications for the current user",
+        "summary": "Get Notifications",
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "GetNotifications",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      },
+      "put": {
+        "description": "Mark a notification as read. This request automatically finds an unread notification to mark as read.",
+        "summary": "Mark Notification as Read",
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "MarkNotificationasRead",
+        "deprecated": false,
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "default": "Bearer {token}",
+            "type": "string"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "enum": [
+              "application/json"
+            ],
+            "type": "string",
+            "description": ""
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "description": "",
+            "schema": {
+              "example": "{{notificationRequestBody}}",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "headers": {}
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "RegisterUserRequest": {
+      "title": "RegisterUserRequest",
+      "example": {
+        "email": "user@example.com",
+        "password": "securePassword123",
+        "firstName": "John",
+        "lastName": "Doe",
+        "phone": "+1234567890",
+        "passportId": "123456789",
+        "role": "USER"
+      },
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "passportId": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "password",
+        "firstName",
+        "lastName",
+        "phone",
+        "passportId",
+        "role"
+      ]
+    },
+    "RegisterHotelOwnerRequest": {
+      "title": "RegisterHotelOwnerRequest",
+      "example": {
+        "email": "owner@example.com",
+        "password": "securePassword123",
+        "firstName": "Hotel",
+        "lastName": "Owner",
+        "phone": "+1234567890",
+        "passportId": "987654321",
+        "role": "HOTEL_OWNER"
+      },
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "passportId": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "password",
+        "firstName",
+        "lastName",
+        "phone",
+        "passportId",
+        "role"
+      ]
+    },
+    "RegisterAdminRequest": {
+      "title": "RegisterAdminRequest",
+      "example": {
+        "email": "admin@example.com",
+        "password": "securePassword123",
+        "firstName": "Admin",
+        "lastName": "User",
+        "phone": "+1234567890",
+        "passportId": "123123123",
+        "role": "ADMIN"
+      },
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "passportId": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "password",
+        "firstName",
+        "lastName",
+        "phone",
+        "passportId",
+        "role"
+      ]
+    },
+    "LoginUserRequest": {
+      "title": "LoginUserRequest",
+      "example": {
+        "email": "user@example.com",
+        "password": "securePassword123"
+      },
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "password"
+      ]
+    },
+    "LoginHotelOwnerRequest": {
+      "title": "LoginHotelOwnerRequest",
+      "example": {
+        "email": "owner@example.com",
+        "password": "securePassword123"
+      },
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "password"
+      ]
+    },
+    "LoginAdminRequest": {
+      "title": "LoginAdminRequest",
+      "example": {
+        "email": "admin@example.com",
+        "password": "securePassword123"
+      },
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "password"
+      ]
+    },
+    "UpdateUserProfileRequest": {
+      "title": "UpdateUserProfileRequest",
+      "example": {
+        "firstName": "Updated",
+        "lastName": "Name",
+        "phone": "+9876543210",
+        "profilePicture": "https://example.com/profile.jpg"
+      },
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "profilePicture": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "firstName",
+        "lastName",
+        "phone",
+        "profilePicture"
+      ]
+    },
+    "BookFlightRequest": {
+      "title": "BookFlightRequest",
+      "example": {
+        "firstName": "Updated",
+        "lastName": "Name",
+        "email": "user@example.com",
+        "passportNumber": "123456789",
+        "flightIds": [
+          "flight123",
+          "flight456"
+        ]
+      },
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "passportNumber": {
+          "type": "string"
+        },
+        "flightIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "firstName",
+        "lastName",
+        "email",
+        "passportNumber",
+        "flightIds"
+      ]
+    },
+    "CreateHotelRequest": {
+      "title": "CreateHotelRequest",
+      "example": {
+        "name": "Grand Hotel",
+        "description": "A luxurious 5-star hotel in the heart of downtown",
+        "address": "123 Main Street",
+        "ownerId": "9e592e11-21c9-473b-a3c0-66d13ffb17c4",
+        "cityId": "393ce2f1-4c8f-4f80-b72b-ab262d794d56",
+        "country": "Canada",
+        "postalCode": "M5V 2T6",
+        "images": [
+          {
+            "url": "https://example.com/hotel-image1.jpg",
+            "caption": "Hotel Exterior"
+          },
+          {
+            "url": "https://example.com/hotel-image2.jpg",
+            "caption": "Lobby View"
+          }
+        ],
+        "rating": 4.5,
+        "amenities": "WiFi, Pool, Spa, Restaurant, Room Service",
+        "contactEmail": "info@grandhotel.com",
+        "contactPhone": "+1-123-456-7890",
+        "pricePerNight": 199.99,
+        "type": "HOTEL",
+        "roomCount": 50
+      },
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "ownerId": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Image"
+          }
+        },
+        "rating": {
+          "type": "number",
+          "format": "double"
+        },
+        "amenities": {
+          "type": "string"
+        },
+        "contactEmail": {
+          "type": "string"
+        },
+        "contactPhone": {
+          "type": "string"
+        },
+        "pricePerNight": {
+          "type": "number",
+          "format": "double"
+        },
+        "type": {
+          "type": "string"
+        },
+        "roomCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "address",
+        "ownerId",
+        "cityId",
+        "country",
+        "postalCode",
+        "images",
+        "rating",
+        "amenities",
+        "contactEmail",
+        "contactPhone",
+        "pricePerNight",
+        "type",
+        "roomCount"
+      ]
+    },
+    "Image": {
+      "title": "Image",
+      "example": {
+        "url": "https://example.com/hotel-image1.jpg",
+        "caption": "Hotel Exterior"
+      },
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "caption"
+      ]
+    },
+    "UpdateHotelRequest": {
+      "title": "UpdateHotelRequest",
+      "example": {
+        "name": "Updated Grand Hotel",
+        "description": "An updated luxurious 5-star hotel in the heart of downtown",
+        "address": "456 Main Avenue",
+        "cityId": "393ce2f1-4c8f-4f80-b72b-ab262d794d56",
+        "country": "Canada",
+        "postalCode": "M5V 2T7",
+        "images": [
+          {
+            "url": "https://example.com/hotel-image-updated1.jpg",
+            "caption": "Updated Hotel Exterior"
+          },
+          {
+            "url": "https://example.com/hotel-image-updated2.jpg",
+            "caption": "Updated Lobby View"
+          },
+          {
+            "url": "https://example.com/hotel-image-updated3.jpg",
+            "caption": "New Pool Area"
+          }
+        ],
+        "rating": 4.8,
+        "amenities": "WiFi, Pool, Spa, Restaurant, Room Service, Gym, Conference Room",
+        "contactEmail": "info@updatedgrandhotel.com",
+        "contactPhone": "+1-987-654-3210",
+        "pricePerNight": 249.99,
+        "type": "LUXURY",
+        "roomCount": 75
+      },
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Image"
+          }
+        },
+        "rating": {
+          "type": "number",
+          "format": "double"
+        },
+        "amenities": {
+          "type": "string"
+        },
+        "contactEmail": {
+          "type": "string"
+        },
+        "contactPhone": {
+          "type": "string"
+        },
+        "pricePerNight": {
+          "type": "number",
+          "format": "double"
+        },
+        "type": {
+          "type": "string"
+        },
+        "roomCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "address",
+        "cityId",
+        "country",
+        "postalCode",
+        "images",
+        "rating",
+        "amenities",
+        "contactEmail",
+        "contactPhone",
+        "pricePerNight",
+        "type",
+        "roomCount"
+      ]
+    },
+    "CreateRoomRequest": {
+      "title": "CreateRoomRequest",
+      "example": {
+        "type": "Deluxe Suite",
+        "description": "Spacious suite with king-size bed and city view",
+        "price": 299.99,
+        "currency": "USD",
+        "maxOccupancy": 2,
+        "amenities": "Mini-bar, Smart TV, Free Wi-Fi, Coffee Maker",
+        "images": [
+          {
+            "url": "https://example.com/room-deluxe.jpg",
+            "caption": "Deluxe Suite"
+          }
+        ],
+        "availableCount": 5
+      },
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "maxOccupancy": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "amenities": {
+          "type": "string"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Image"
+          }
+        },
+        "availableCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "required": [
+        "type",
+        "description",
+        "price",
+        "currency",
+        "maxOccupancy",
+        "amenities",
+        "images",
+        "availableCount"
+      ]
+    },
+    "UpdateRoomAvailabilityRequest": {
+      "title": "UpdateRoomAvailabilityRequest",
+      "example": {
+        "roomId": "",
+        "availableCount": 10
+      },
+      "type": "object",
+      "properties": {
+        "roomId": {
+          "type": "string"
+        },
+        "availableCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "required": [
+        "roomId",
+        "availableCount"
+      ]
+    },
+    "BookHotelRoomRequest": {
+      "title": "BookHotelRoomRequest",
+      "example": {
+        "hotelId": "60455486-5717-468e-b6f2-9587d926644f",
+        "roomId": "",
+        "checkInDate": "2025-04-15",
+        "checkOutDate": "2025-04-20",
+        "guestCount": 2
+      },
+      "type": "object",
+      "properties": {
+        "hotelId": {
+          "type": "string"
+        },
+        "roomId": {
+          "type": "string"
+        },
+        "checkInDate": {
+          "type": "string"
+        },
+        "checkOutDate": {
+          "type": "string"
+        },
+        "guestCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "required": [
+        "hotelId",
+        "roomId",
+        "checkInDate",
+        "checkOutDate",
+        "guestCount"
+      ]
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Endpoints related to user authentication and profile management"
+    },
+    {
+      "name": "Flight Management",
+      "description": "Endpoints related to flight search and booking"
+    },
+    {
+      "name": "Hotel Management",
+      "description": "Endpoints related to hotel management and bookings"
+    },
+    {
+      "name": "Booking Management",
+      "description": "Endpoints related to managing bookings"
+    },
+    {
+      "name": "Notifications",
+      "description": "Endpoints related to user notifications"
+    }
+  ]
+}

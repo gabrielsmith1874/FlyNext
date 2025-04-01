@@ -1,0 +1,75 @@
+import React from 'react';
+import { ArrowLongRightIcon } from '@heroicons/react/24/outline';
+
+// Helper function to format duration from minutes to "Xhr Ymin"
+function formatDuration(duration) {
+  const hours = Math.floor(duration / 60);
+  const minutes = duration % 60;
+  return `${hours}hr ${minutes}min`;
+}
+
+const FlightCard = ({ flight, passengerCount, showSelectButton }) => {
+  if (!flight) return null;
+
+  // Helper function to safely get airline display name
+  const getAirlineDisplay = (airline) => {
+    if (!airline) return 'Unknown Airline';
+    if (typeof airline === 'string') return airline;
+    return airline.name || airline.code || 'Unknown Airline';
+  };
+
+  // Helper function to safely get location display
+  const getLocationDisplay = (location) => {
+    if (!location) return 'Unknown Location';
+    if (typeof location === 'string') return location;
+    return location.city || location.code || 'Unknown Location';
+  };
+
+  const formattedDuration = formatDuration(parseInt(flight.duration, 10));
+
+  return (
+    <div className="mb-8 p-4 bg-muted/50 rounded-lg">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">{getAirlineDisplay(flight.airline)}</h3>
+          <p className="text-sm text-muted-foreground">Flight {flight.flightNumber}</p>
+          {flight.segments && (
+            <p className="text-sm text-primary">
+              Indirect Flight - {flight.segments.length} segment{flight.segments.length > 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+        <div className="text-right">
+          <p className="text-xl font-bold text-foreground">
+            ${flight.price && passengerCount ? (flight.price * passengerCount).toFixed(2) : flight.price}
+          </p>
+          <p className="text-sm text-muted-foreground">{passengerCount} passenger{passengerCount !== 1 ? 's' : ''}</p>
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <div className="text-center">
+          <p className="text-2xl font-bold text-foreground">{flight.departureTime}</p>
+          <p className="text-sm text-muted-foreground">{getLocationDisplay(flight.origin)}</p>
+        </div>
+        
+        <div className="flex-1 px-6">
+          <div className="relative flex items-center justify-center">
+            <div className="w-full border-t border-border"></div>
+            <div className="absolute bg-black dark:bg-black px-3 text-xs text-muted-foreground">
+              {formattedDuration}
+            </div>
+            <ArrowLongRightIcon className="absolute right-0 h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+        
+        <div className="text-center">
+          <p className="text-2xl font-bold text-foreground">{flight.arrivalTime}</p>
+          <p className="text-sm text-muted-foreground">{getLocationDisplay(flight.destination)}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FlightCard;
