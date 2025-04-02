@@ -58,7 +58,12 @@ echo "====== Setting up FlyNext ======"
 
 # Install FlyNext dependencies
 echo "Installing FlyNext dependencies..."
-npm install
+if ! npm install; then
+  echo "Failed to install FlyNext dependencies. Cleaning up and retrying..."
+  rm -rf node_modules
+  npm cache clean --force
+  npm install
+fi
 
 # Run FlyNext database migrations
 echo "Running FlyNext database migrations..."
