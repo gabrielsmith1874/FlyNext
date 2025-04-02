@@ -36,6 +36,9 @@ PID=$(lsof -t -i:$PORT)
 if [ -n "$PID" ]; then
   echo "Killing process $PID using port $PORT..."
   kill -9 $PID
+  sleep 2  # Give the system time to release the port
+else
+  echo "No process found using port $PORT."
 fi
 
 # Start AFS server in the background on port 3001
