@@ -29,6 +29,15 @@ echo "Creating agency users..."
 # Note: Make sure to add student IDs to prisma/data/agencies.js first
 node prisma/data/import_agencies
 
+# Kill any process using port 3001
+echo "Checking for processes using port 3001..."
+PORT=3001
+PID=$(lsof -t -i:$PORT)
+if [ -n "$PID" ]; then
+  echo "Killing process $PID using port $PORT..."
+  kill -9 $PID
+fi
+
 # Start AFS server in the background on port 3001
 echo "Starting AFS server in the background on port 3001..."
 PORT=3001 npm run dev &
