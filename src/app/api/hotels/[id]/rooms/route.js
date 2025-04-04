@@ -155,93 +155,27 @@ export async function POST(request, { params }) {
   }
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, context) {
   try {
-    const resolvedParams = await params;
+    const resolvedParams = await context.params; // Await params before accessing
     const { id: hotelId } = resolvedParams;
-    const { searchParams } = new URL(request.url);
-    
-    // New query parameters for availability view
-    const startDateStr = searchParams.get('startDate');
-    const endDateStr = searchParams.get('endDate');
-    const status = searchParams.get('status');
-    const roomTypeFilter = searchParams.get('roomType'); // existing
-    
-    // NEW: If startDate and endDate are provided, perform availability aggregation per room type
-    if (startDateStr && endDateStr) {
-      const startDate = new Date(startDateStr);
-      const endDate = new Date(endDateStr);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || endDate < startDate) {
-        return NextResponse.json(
-          { error: 'Invalid date range. Ensure valid dates and that endDate is after startDate.' },
-          { status: 400 }
-        );
-      }
-      
-      // Query rooms for the hotel with optional room type filter
-      const rooms = await prisma.room.findMany({
-        where: {
-          hotelId,
-          ...(roomTypeFilter ? { type: { contains: roomTypeFilter } } : {})
-        }
-      });
-      
-      // For each room get confirmed booking count over the date range
-      const roomData = await Promise.all(rooms.map(async (room) => {
-        const bookingCount = await prisma.hotelBooking.count({
-          where: {
-            roomId: room.id,
-            booking: { status: 'CONFIRMED' },
-            checkInDate: { lte: endDate },
-            checkOutDate: { gt: startDate }
-          }
-        });
-        return {
-          roomType: room.type,
-          capacity: room.availableCount,
-          booked: bookingCount
-        };
-      }));
-      
-      // Aggregate availability per room type
-      const aggregated = roomData.reduce((acc, cur) => {
-        if (!acc[cur.roomType]) {
-          acc[cur.roomType] = { roomType: cur.roomType, totalRooms: 0, totalCapacity: 0, totalBooked: 0 };
-        }
-        acc[cur.roomType].totalRooms += 1;
-        acc[cur.roomType].totalCapacity += cur.capacity;
-        acc[cur.roomType].totalBooked += cur.booked;
-        return acc;
-      }, {});
-      
-      return NextResponse.json(Object.values(aggregated));
-    }
-    
-    // Fallback: initialize "where" and then add optional filters
-    let where = {};
-    if (status) {
-      where.status = { contains: status };
-    }
-    
-    if (roomTypeFilter) {
-      // Filter by room type substring match. Case-insensitivity is not supported in this Prisma version.
-      where.room = { type: { contains: roomTypeFilter } };
-    }
-    
-    const bookings = await prisma.hotelBooking.findMany({
-      where,
+
+    // Fetch rooms for the given hotel ID
+    const rooms = await prisma.room.findMany({
+      where: { hotelId },
       include: {
-        booking: true,
-        room: true
-      }
+        images: true, // Include room images
+      },
     });
-    
-    return NextResponse.json(bookings);
-    
+
+    // Log the fetched rooms for debugging
+    console.log('Fetched rooms:', rooms);
+
+    return NextResponse.json({ rooms });
   } catch (error) {
-    console.error('Search bookings error:', error);
+    console.error('Error fetching rooms:', error);
     return NextResponse.json(
-      { error: 'Failed to search bookings', details: error.message },
+      { error: 'Failed to fetch rooms' },
       { status: 500 }
     );
   }

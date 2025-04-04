@@ -56,33 +56,24 @@ export default function HotelRoomsPage() {
     setIsLoading(true)
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`/api/hotels/${hotelId}`, {
+      const res = await fetch(`/api/hotels/${hotelId}/rooms`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      })
-      if (res.ok) {
-        const hotel = await res.json()
-        
-        const detailedRooms = await Promise.all((hotel.rooms || []).map(async (room: Room) => {
-          const roomResponse = await fetch(`/api/hotels/${hotelId}/rooms/${room.id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          if (roomResponse.ok) {
-            return await roomResponse.json();
-          }
-          return room;
-        }));
-        
-        setRooms(detailedRooms || []);
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch rooms: ${res.status}`);
       }
+      
+      const data = await res.json();
+      console.log('Fetched rooms:', data); // Log the response for debugging
+      setRooms(data.rooms || data); // Adjust based on the API response structure
     } catch (error) {
-      console.error('Failed to fetch rooms:', error)
-      toast.error('Failed to load rooms')
+      console.error('Error fetching rooms:', error);
+      toast.error('Failed to load rooms');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 

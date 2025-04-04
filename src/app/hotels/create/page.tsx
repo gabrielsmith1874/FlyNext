@@ -7,6 +7,8 @@ import { toast } from 'react-hot-toast'
 import { StarIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { useAuth } from '@/src/hooks/useAuth'
+import OwnedHotelsList from "@/src/components/OwnedHotelsList";
+
 
 // Update interface to remove JSON images field
 interface HotelCreationForm {
@@ -212,58 +214,7 @@ export default function CreateHotelPage() {
             {/* Owned Hotels Section */}
             <div className="bg-background/60 backdrop-blur-sm rounded-lg p-6 mb-8">
               <h1 className="text-2xl font-semibold mb-6 text-foreground">My Hotels</h1>
-              {ownedHotels.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {ownedHotels.map((hotel) => (
-                    <div key={hotel.id} className="bg-card border rounded-lg overflow-hidden shadow hover:shadow-md transition-shadow">
-                      {hotel.images?.[0] && (
-                        <div className="relative h-48">
-                          <img
-                            src={hotel.images[0].url}
-                            alt={hotel.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
-                            ${hotel.pricePerNight}/night
-                          </div>
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <h3 className="text-lg font-semibold mb-2">{hotel.name}</h3>
-                        <div className="flex items-center mb-2">
-                          <StarIcon className="h-5 w-5 text-yellow-400" />
-                          <span className="ml-1">{hotel.rating}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {hotel.address}
-                        </p>
-                        <div className="flex justify-around items-center">
-                          <Link 
-                            href={`/hotels/owner/${hotel.id}/rooms`}
-                            className="text-primary hover:underline text-sm"
-                          >
-                            Manage Rooms
-                          </Link>
-                          <Link 
-                            href={`/hotels/owner/${hotel.id}/bookings`}
-                            className="text-primary hover:underline text-sm"
-                          >
-                            Manage Bookings
-                          </Link>
-                          <Link 
-                            href={`/hotels/owner/${hotel.id}/edit`}
-                            className="text-primary hover:underline text-sm"
-                          >
-                            Edit Hotel
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No hotels found. Create your first hotel below.</p>
-              )}
+              <OwnedHotelsList hotels={ownedHotels} />
             </div>
 
             {/* Create Hotel Form */}

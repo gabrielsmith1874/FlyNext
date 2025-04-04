@@ -5,28 +5,28 @@ import { generateInvoice } from '@/lib/pdf-gen';
 
 export async function GET(request, { params }) {
   try {
-    // Get and verify token
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get('token');
+
+    if (!token) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.split(' ')[1];
     const user = await verifyToken(token);
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }
       );
     }
-    
+
     const { id } = params;
-    
-    // Get booking with all related data including guest and passenger details
+
+    // Get booking with all related data
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {
@@ -43,8 +43,7 @@ export async function GET(request, { params }) {
             arrivalTime: true,
             price: true,
             currency: true,
-            status: true,
-            passengerDetails: true
+            status: true
           }
         },
         hotelBookings: {
@@ -56,14 +55,14 @@ export async function GET(request, { params }) {
         payment: true
       }
     });
-    
+
     if (!booking) {
       return NextResponse.json(
         { error: 'Booking not found' },
         { status: 404 }
       );
     }
-    
+
     // Check if booking belongs to user or user is admin
     if (booking.userId !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
@@ -71,10 +70,10 @@ export async function GET(request, { params }) {
         { status: 403 }
       );
     }
-    
+
     // Generate PDF invoice
     const pdfBuffer = await generateInvoice(booking);
-    
+
     // Return PDF as response with appropriate headers
     return new NextResponse(pdfBuffer, {
       status: 200,
@@ -83,7 +82,7 @@ export async function GET(request, { params }) {
         'Content-Disposition': `attachment; filename="invoice-${booking.bookingReference || id}.pdf"`,
       },
     });
-    
+
   } catch (error) {
     console.error('Generate invoice error:', error);
     return NextResponse.json(

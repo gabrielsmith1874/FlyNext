@@ -98,6 +98,29 @@ export async function DELETE(request, { params }) {
       
       // Check if this is part of a connecting flight group
       if (flightBooking.status && flightBooking.status.includes(':CONNECTION_REF:')) {
+        // First attempt to cancel with AFS if the flight is confirmed
+        if (booking.status === 'CONFIRMED') {
+          try {
+            const afsApiKey = process.env.AFS_API_KEY;
+            const afsBaseUrl = process.env.AFS_BASE_URL || 'http://localhost:3001';
+            
+            await fetch(`${afsBaseUrl}/api/bookings/cancel`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': afsApiKey
+              },
+              body: JSON.stringify({
+                lastName: user.lastName || 'Smith', // Fallback to a default
+                bookingReference: booking.bookingReference
+              })
+            });
+          } catch (afsError) {
+            console.error('Failed to cancel with AFS:', afsError);
+            // Continue with database updates even if AFS call fails
+          }
+        }
+        
         // Delete this specific flight segment
         await prisma.flightBooking.delete({
           where: { id: componentId }

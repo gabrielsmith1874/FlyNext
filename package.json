@@ -49,11 +49,13 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
+    "formidable": "^3.5.2",
     "install": "^0.13.0",
     "jspdf": "^3.0.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.484.0",
     "next": "^15.2.4",
+    "next-auth": "^4.24.11",
     "node-fetch": "^2.7.0",
     "nodemailer": "^6.10.0",
     "npm": "^11.2.0",
@@ -62,7 +64,9 @@
     "react-day-picker": "^9.6.3",
     "react-hook-form": "^7.55.0",
     "react-leaflet": "^4.2.1",
+    "react-toastify": "^11.0.5",
     "tailwind-merge": "^3.0.2",
+    "toastify": "^2.0.1",
     "typescript": "^5.8.2",
     "zod": "^3.24.2"
   }

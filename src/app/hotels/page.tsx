@@ -11,6 +11,10 @@ import { Slider } from "@/src/components/ui/slider"
 import { useRouter } from 'next/navigation'
 import { CustomDatePicker } from '@/src/components/ui/CustomDatePicker'
 import { saveHotelGuestDetails } from '../../../lib/guest-utils'
+import HotelCard from "@/src/components/HotelCard"
+import RoomCard from "@/src/components/RoomCard"
+import prisma from '@/lib/prisma'
+
 
 // Define the Room interface
 interface Room {
@@ -23,6 +27,8 @@ interface Room {
   features?: string[];
   amenities?: string; // Add amenities as an optional property
   imageUrl?: string; // Add imageUrl as an optional property
+  maxGuests?: number; // Add maxGuests as an optional property
+  images?: { url: string }[]; // Add images as an optional property
 }
 
 interface HotelSearchForm {
@@ -50,6 +56,21 @@ interface GuestDetailsForm {
   email: string
   phone: string
   guestCount?: number // Add guestCount as an optional property
+}
+
+async function getMaxRoomPrice(): Promise<number> {
+  try {
+    const maxPrice = await prisma.room.aggregate({
+      _max: {
+        price: true,
+      },
+    });
+
+    return maxPrice._max.price || 0; // Return 0 if no rooms exist
+  } catch (error) {
+    console.error('Error fetching max room price:', error);
+    throw new Error('Failed to fetch max room price');
+  }
 }
 
 async function searchHotels(params: HotelSearchForm) {
@@ -112,7 +133,7 @@ export default function HotelSearch() {
   const [selectedHotel, setSelectedHotel] = useState<any>(null)
   const [bookingStep, setBookingStep] = useState(0)
   const [selectedRoom, setSelectedRoom] = useState<any>(null)
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000])
   const [roomDateRange, setRoomDateRange] = useState<{ from?: Date; to?: Date }>({})
   const [roomsSearched, setRoomsSearched] = useState(false); // new state
   const [guestCount, setGuestCount] = useState(1); // new guest count state
@@ -150,7 +171,9 @@ export default function HotelSearch() {
       
       const searchData = {
         ...data
-      }
+      };
+
+      console.log('Search data:', searchData); // Log the search data for debugging
 
       const results = await searchHotels(searchData);
       
@@ -176,15 +199,7 @@ export default function HotelSearch() {
   }
 
   const processAddToCart = async (roomParam: any, guestDetails: GuestDetailsForm) => {
-    setIsLoading(true)
     try {
-      if (!selectedHotel || !roomParam) {
-        throw new Error('Please select a hotel and room')
-      }
-      if (roomParam.availableCount < 1) {
-        throw new Error('No rooms available for booking');
-      }
-      // Build payload with required fields at top level
       const payload = {
         type: 'HOTEL',
         status: 'PENDING',
@@ -196,16 +211,16 @@ export default function HotelSearch() {
         guestCount: guestDetails.guestCount || 1,
         price: roomParam.price,
         currency: roomParam.currency,
-        roomType: roomParam.roomType,
+        roomType: roomParam.roomType || roomParam.type, // Fix to support both formats
         guestDetails: JSON.stringify(guestDetails),
         totalPrice: roomParam.price,
-        notes: `Hotel booking for ${selectedHotel.name}, ${roomParam.type} room`
+        notes: `Hotel booking for ${selectedHotel.name}, ${roomParam.type || roomParam.roomType} room`
       };
 
       console.log("Booking payload:", payload);
       const token = localStorage.getItem('token');
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/api/hotels/bookings`, {  // changed route from /api/bookings to /api/hotels/bookings
+      const response = await fetch(`${baseUrl}/api/hotels/bookings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -286,12 +301,9 @@ export default function HotelSearch() {
     });
     const formattedCheckInDate = roomDateRange.from.toISOString().split("T")[0];
     const formattedCheckOutDate = roomDateRange.to.toISOString().split("T")[0];
-    // Use base URL from env; ensure NEXT_PUBLIC_API_URL is defined in your .env file
     const baseURL = process.env.NEXT_PUBLIC_API_URL || "";
-    // Retrieve token from localStorage (or any other storage)
     const token = localStorage.getItem("token") || localStorage.getItem("authToken");
     try {
-      // First, get the detailed hotel data to ensure we have the room IDs
       const detailRes = await fetch(
         `${baseURL}/api/hotels/${selectedHotel.id}`,
         {
@@ -309,7 +321,6 @@ export default function HotelSearch() {
       const hotelDetails = await detailRes.json();
       console.log("Hotel Details:", hotelDetails);
       
-      // Now get the availability data
       const res = await fetch(
         `${baseURL}/api/hotels/${selectedHotel.id}/rooms?startDate=${formattedCheckInDate}&endDate=${formattedCheckOutDate}&guestCount=${guestCount}`,
         {
@@ -325,43 +336,49 @@ export default function HotelSearch() {
       const availableRoomsData = await res.json();
       console.log("API Response:", availableRoomsData);
       
-      // Get the hotel's real rooms with real IDs
       const hotelRooms = hotelDetails.rooms || [];
       console.log("Hotel Rooms with real IDs:", hotelRooms);
       
-      // Transform the response data to match the expected format
-      // The API returns an array of aggregated availability objects
-      let transformedRooms = Array.isArray(availableRoomsData) 
-        ? availableRoomsData.map(roomData => {
-            // Find the actual room in the hotel's rooms data that matches this room type
-            const actualRoom: Room | undefined = hotelRooms.find((r: Room) => r.type === roomData.roomType);
-            
+      let transformedRooms = Array.isArray(availableRoomsData.rooms) 
+        ? availableRoomsData.rooms.map(roomData => {
+            // Match by ID or type
+            const actualRoom: Room | undefined = hotelRooms.find(
+              (r: Room) => r.id === roomData.id || r.type.toLowerCase() === roomData.type.toLowerCase()
+            );
+
             if (!actualRoom) {
-              console.warn(`Could not find room with type ${roomData.roomType} in hotel data`);
+              console.warn(`No matching room found for roomData:`, roomData);
             }
-            
+
+            const totalCapacity = roomData.totalCapacity || actualRoom?.availableCount || 0;
+            const totalBooked = roomData.totalBooked || 0;
+
             return {
-              // Use the real room ID if available, otherwise generate a temporary one
-              id: actualRoom?.id || `${roomData.roomType}-${Date.now()}`,
-              type: roomData.roomType,
-              price: actualRoom?.price || 0,
-              description: actualRoom?.description || '',
-              availableCount: roomData.totalCapacity - roomData.totalBooked,
-              currency: actualRoom?.currency || 'USD',
-              features: actualRoom?.amenities?.split(',').map((a: string) => a.trim()) || [],
-              // Add image URL - using either the actual room's image or a default placeholder
+              id: actualRoom?.id || roomData.id,
+              type: actualRoom?.type || roomData.type,
+              price: actualRoom?.price || roomData.price,
+              description: actualRoom?.description || roomData.description,
+              availableCount: totalCapacity - totalBooked, // Ensure valid calculation
+              currency: actualRoom?.currency || roomData.currency || 'USD',
+              features: actualRoom?.features || [],
               imageUrl: actualRoom?.imageUrl || 
-                `https://source.unsplash.com/featured/?hotel,room,${encodeURIComponent(roomData.roomType)}`
+                `https://source.unsplash.com/featured/?hotel,room,${encodeURIComponent(roomData.type)}`,
+              maxGuests: actualRoom?.maxGuests || roomData.maxGuests || undefined
             };
           })
         : [];
+
+      if (transformedRooms.length === 0) {
+        console.error("Transformed rooms list is empty. Debugging data:");
+        console.log("Available Rooms Data:", availableRoomsData.rooms);
+        console.log("Hotel Rooms:", hotelRooms);
+      }
       
       console.log("Transformed Rooms:", transformedRooms);
       
-      // Update selectedHotel's rooms with the transformed data
       setSelectedHotel((prev: typeof selectedHotel) => ({ ...prev, rooms: transformedRooms as Room[] }));
       toast.success("Room search successful");
-      setRoomsSearched(true); // mark that search was triggered
+      setRoomsSearched(true);
     } catch (error: any) {
       console.error("Error fetching room availability:", error);
       toast.error(error.message || "Error fetching room availability");
@@ -437,7 +454,7 @@ export default function HotelSearch() {
                     <div className="px-3 py-6">
                       <Slider
                         defaultValue={priceRange}
-                        max={1000}
+                        max={3000}
                         min={0}
                         step={10}
                         value={priceRange}
@@ -470,55 +487,11 @@ export default function HotelSearch() {
             {hotels.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {hotels.map((hotel: any) => (
-                  <div
+                  <HotelCard
                     key={hotel.id}
-                    className="bg-card/50 backdrop-blur-sm border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
-                  >
-                    {(hotel.images?.[0] || hotel.image) && (
-                      <div className="relative h-48">
-                        <img
-                          src={hotel.images?.[0]?.url || hotel.image || `https://source.unsplash.com/featured/?hotel,${encodeURIComponent(hotel.name)}`}
-                          alt={hotel.name}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
-                          ${hotel.pricePerNight || hotel.startingPrice || 0}/night
-                        </div>
-                      </div>
-                    )}
-                    <div className="p-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-xl font-semibold text-foreground">{hotel.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {hotel.city}, {hotel.country}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <StarIconSolid className="h-5 w-5 text-yellow-400" />
-                          <span className="text-foreground font-medium">{hotel.rating}</span>
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground mb-4">{hotel.description}</p>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {hotel.amenities?.split(',').map((amenity: string, index: number) => (
-                          <span
-                            key={index}
-                            className="bg-muted px-2 py-1 rounded-md text-xs text-muted-foreground"
-                          >
-                            {amenity.trim()}
-                          </span>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => handleHotelSelect(hotel)}
-                        className="w-full py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                      >
-                        View Rooms
-                      </button>
-                    </div>
-                  </div>
+                    hotel={hotel}
+                    onSelect={handleHotelSelect}
+                  />
                 ))}
               </div>
             ) : isLoading ? (
@@ -577,54 +550,13 @@ export default function HotelSearch() {
                 <div className="space-y-4">
                   {Array.isArray(selectedHotel?.rooms) && selectedHotel.rooms.length > 0 ? (
                     selectedHotel.rooms
-                      .filter((room: any) => (room.availableCount > 0))
+                      .filter((room: any) => {
+                        console.log("Filtering room:", room); // Debugging room data before filtering
+                        return room.availableCount > 0 && guestCount <= (room.maxGuests || Infinity);
+                      })
                       .map((room: any) => {
-                        const roomPrice = room.price || room.pricePerNight || room.nightlyRate || 0;
-                        return (
-                          <div
-                            key={room.id}
-                            className="border border-border rounded-lg overflow-hidden hover:border-primary transition-colors cursor-pointer"
-                            onClick={() => handleRoomSelect(room)}
-                          >
-                            <div className="flex flex-col md:flex-row">
-                              {/* Room image */}
-                              <div className="w-full md:w-1/3 h-48">
-                                <img 
-                                  src={room.imageUrl || `https://source.unsplash.com/featured/?hotel,room,${encodeURIComponent(room.type)}`}
-                                  alt={`${room.type} room`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              
-                              {/* Room details */}
-                              <div className="w-full md:w-2/3 p-4">
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <h4 className="text-lg font-medium text-foreground">{room.type}</h4>
-                                    <p className="text-sm text-muted-foreground mb-2">{room.description}</p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {room.features?.map((feature: string, index: number) => (
-                                        <span
-                                          key={index}
-                                          className="bg-muted px-2 py-1 rounded-md text-xs text-muted-foreground"
-                                        >
-                                          {feature}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xl font-bold text-foreground">${roomPrice}</p>
-                                    <p className="text-xs text-muted-foreground">per night</p>
-                                    <button className="mt-2 px-4 py-2 bg-primary text-primary-foreground text-sm rounded-md hover:bg-primary/90 transition-colors">
-                                      Add to Cart
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
+                        console.log("Passing room to RoomCard:", room); // Debugging room data passed to RoomCard
+                        return <RoomCard key={room.id} room={room} onSelect={handleRoomSelect} />;
                       })
                   ) : (
                     <p className="text-center text-muted-foreground">

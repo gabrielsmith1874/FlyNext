@@ -1,6 +1,26 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import formidable from 'formidable';
+import fs from 'fs/promises';
+import { Readable } from 'stream';
+import path from 'path';
+
+export const config = {
+  api: {
+    bodyParser: false, // Disable Next.js body parser to handle FormData
+  },
+};
+
+// Helper function to convert NextRequest to a Node.js readable stream
+async function convertNextRequestToNodeRequest(nextRequest) {
+  const body = await nextRequest.arrayBuffer();
+  const readable = new Readable();
+  readable._read = () => {};
+  readable.push(Buffer.from(body));
+  readable.push(null);
+  return readable;
+}
 
 export async function GET(request, { params }) {
   try {
@@ -80,40 +100,139 @@ export async function GET(request, { params }) {
   }
 }
 
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
+  const { id } = await context.params;
+
   try {
-    const { id } = params;
-    const body = await request.json();
-    const { images } = body;
-
-    // Update room details
-    const updatedRoom = await prisma.room.update({
-      where: { id },
-      data: {
-        ...body, // Include other fields like name, description, etc.
-      },
-    });
-
-    // Handle images
-    if (images && images.length > 0) {
-      // Delete existing images
-      await prisma.roomImage.deleteMany({
-        where: { roomId: id },
-      });
-
-      // Add new images
-      await prisma.roomImage.createMany({
-        data: images.map((image) => ({
-          roomId: id,
-          url: image.url,
-          caption: image.caption || null,
-        })),
-      });
+    // Verify authentication
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
-    return NextResponse.json(updatedRoom);
+    const token = authHeader.split(' ')[1];
+    const user = verifyToken(token);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Get the hotel to verify ownership
+    const hotel = await prisma.hotel.findUnique({
+      where: { id },
+      include: { images: true }
+    });
+
+    if (!hotel) {
+      return NextResponse.json(
+        { error: 'Hotel not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if user is hotel owner or admin
+    if (hotel.ownerId !== user.id && user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - You do not own this hotel' },
+        { status: 403 }
+      );
+    }
+
+    // Convert and parse the form data
+    const formData = await request.formData();
+    
+    // Extract basic hotel data from form
+    const name = formData.get('name');
+    const description = formData.get('description');
+    const address = formData.get('address');
+    const cityId = formData.get('cityId');
+    const rating = parseFloat(formData.get('rating'));
+    const amenities = formData.get('amenities');
+    const contactEmail = formData.get('contactEmail');
+    const contactPhone = formData.get('contactPhone');
+    
+    // Get removed image IDs
+    const removedImageIdsStr = formData.get('removedImageIds');
+    const removedImageIds = removedImageIdsStr ? JSON.parse(removedImageIdsStr) : [];
+    
+    // Handle new images
+    const images = formData.getAll('newImages'); // Updated to match the frontend field name
+    const imageUrls = [];
+    
+    // Process uploaded images
+    for (const img of images) {
+      if (img instanceof File && img.size > 0) {
+        try {
+          // Ensure upload directory exists
+          const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'hotels');
+          await fs.mkdir(uploadsDir, { recursive: true });
+          
+          // Generate unique filename
+          const fileName = `hotel-${id}-${Date.now()}-${img.name}`;
+          const filePath = path.join(uploadsDir, fileName);
+          
+          // Convert File object to buffer and save
+          const arrayBuffer = await img.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          await fs.writeFile(filePath, buffer);
+          
+          // Add to image URLs
+          imageUrls.push(`/uploads/hotels/${fileName}`);
+        } catch (error) {
+          console.error(`Error saving file ${img.name}:`, error);
+        }
+      }
+    }
+    
+    // Update hotel with transaction to handle images
+    const updatedHotel = await prisma.$transaction(async (tx) => {
+      // 1. Delete removed images
+      if (removedImageIds.length > 0) {
+        await tx.hotelImage.deleteMany({
+          where: {
+            id: { in: removedImageIds }
+          }
+        });
+      }
+      
+      // 2. Add new images
+      if (imageUrls.length > 0) {
+        await tx.hotelImage.createMany({
+          data: imageUrls.map(url => ({
+            hotelId: id,
+            url: url
+          }))
+        });
+      }
+      
+      // 3. Update hotel data
+      return tx.hotel.update({
+        where: { id },
+        data: {
+          name,
+          description,
+          address,
+          cityId,
+          rating,
+          amenities,
+          contactEmail,
+          contactPhone
+        },
+        include: {
+          images: true,
+          city: true
+        }
+      });
+    });
+    
+    return NextResponse.json(updatedHotel);
   } catch (error) {
-    console.error('Error updating room:', error);
-    return NextResponse.json({ error: 'Failed to update room' }, { status: 500 });
+    console.error('Error updating hotel:', error);
+    return NextResponse.json({ error: 'Failed to update hotel', details: error.message }, { status: 500 });
   }
 }

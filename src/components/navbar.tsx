@@ -183,6 +183,11 @@ export default function Navbar() {
                 Checkout
               </Link>
               {isAuthenticated && (
+                <Link href="/my-bookings" className="text-foreground hover:text-primary dark:text-foreground dark:hover:text-primary">
+                  My Bookings
+                </Link>
+              )}
+              {isAuthenticated && (
                 <div className="relative">
                   <button onClick={() => setShowNotifDropdown(prev => !prev)} className="p-2 rounded-full hover:bg-gray-200">
                     <BellIcon className="h-6 w-6" />
@@ -295,6 +300,11 @@ export default function Navbar() {
               <Link href="/checkout" className="block px-3 py-2 text-foreground hover:bg-primary/10 hover:text-primary rounded-md">
                 Checkout
               </Link>
+              {isAuthenticated && (
+                <Link href="/my-bookings" className="block px-3 py-2 text-foreground hover:bg-primary/10 hover:text-primary rounded-md">
+                  My Bookings
+                </Link>
+              )}
               {isAuthenticated ? (
                 <>
                   <Link href="/profile" className="block px-3 py-2 text-foreground hover:bg-primary/10 hover:text-primary rounded-md">

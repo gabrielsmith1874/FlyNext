@@ -1,111 +1,110 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { toast } from 'react-hot-toast';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 
 interface HotelForm {
-  name: string;
-  description: string;
-  address: string;
-  cityId: string;
-  rating: number;
-  amenities: string;
-  contactEmail: string;
-  contactPhone: string;
+  name: string
+  description: string
+  address: string
+  cityId: string
+  rating: number
+  amenities: string
+  contactEmail: string
+  contactPhone: string
 }
 
 interface City {
-  id: string;
-  name: string;
-  country: string;
+  id: string
+  name: string
+  country: string
 }
 
-export default function EditHotelPage() {
-  const router = useRouter();
-  const { id } = useParams();
-  const [isLoading, setIsLoading] = useState(false);
-  const [cities, setCities] = useState<City[]>([]);
-  const { register, handleSubmit, setValue } = useForm<HotelForm>();
+export default function EditHotelPage({ params }: { params: { id: string } }) {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
+  const [cities, setCities] = useState<City[]>([])
+  const { register, handleSubmit, setValue } = useForm<HotelForm>()
 
   useEffect(() => {
     // Fetch cities
     fetch('/api/cities')
       .then(res => res.json())
       .then(setCities)
-      .catch(() => toast.error('Failed to load cities'));
+      .catch(() => toast.error('Failed to load cities'))
 
     // Fetch hotel details
     const fetchHotel = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`/api/hotels/${id}`, {
+        const token = localStorage.getItem('token')
+        const res = await fetch(`/api/hotels/${params.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
-        });
+        })
         if (res.ok) {
-          const hotel = await res.json();
-          console.log('Hotel data received:', hotel); // Debug log
+          const hotel = await res.json()
+          console.log('Hotel data received:', hotel) // Debug log
 
           if (!hotel.contactEmail || !hotel.contactPhone) {
-            console.warn('Missing contact info:', { email: hotel.contactEmail, phone: hotel.contactPhone });
+            console.warn('Missing contact info:', { email: hotel.contactEmail, phone: hotel.contactPhone })
           }
 
           // Set all form values, with fallbacks
-          setValue('name', hotel.name || '');
-          setValue('description', hotel.description || '');
-          setValue('address', hotel.address || '');
-          setValue('cityId', hotel.cityId || '');
-          setValue('rating', hotel.rating || 0);
-          setValue('amenities', hotel.amenities || '');
-          setValue('contactEmail', hotel.contactEmail || '');
-          setValue('contactPhone', hotel.contactPhone || '');
+          setValue('name', hotel.name || '')
+          setValue('description', hotel.description || '')
+          setValue('address', hotel.address || '')
+          setValue('cityId', hotel.cityId || '')
+          setValue('rating', hotel.rating || 0)
+          setValue('amenities', hotel.amenities || '')
+          setValue('contactEmail', hotel.contactEmail || '') 
+          setValue('contactPhone', hotel.contactPhone || '')
 
           // Debug log for form values
           console.log('Form values set:', {
             email: hotel.contactEmail,
             phone: hotel.contactPhone
-          });
+          })
         } else {
-          throw new Error('Failed to fetch hotel details');
+          throw new Error('Failed to fetch hotel details')
         }
       } catch (error) {
-        console.error('Error fetching hotel:', error); // Enhanced error logging
-        toast.error('Failed to load hotel details');
-        router.push('/hotels/owner');
+        console.error('Error fetching hotel:', error) // Enhanced error logging
+        toast.error('Failed to load hotel details')
+        router.push('/hotels/owner')
       }
-    };
+    }
 
-    fetchHotel();
-  }, [id, setValue, router]);
+    fetchHotel()
+  }, [params.id, setValue, router])
 
   const onSubmit = async (data: HotelForm) => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/hotels/${id}`, {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/hotels/${params.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)
-      });
+      })
 
       if (res.ok) {
-        toast.success('Hotel updated successfully');
-        router.push('/'); // redirect to home page
+        toast.success('Hotel updated successfully')
+        router.push('/hotels/owner')
       } else {
-        throw new Error('Failed to update hotel');
+        throw new Error('Failed to update hotel')
       }
     } catch (error) {
-      toast.error('Failed to update hotel');
+      toast.error('Failed to update hotel')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen relative pt-16">
@@ -197,5 +196,5 @@ export default function EditHotelPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -181,7 +181,7 @@ const BookingManagementPage = () => {
         }
       
         // Use the updated query parameters for filtering
-        let url = `/api/hotels/${hotelId}/rooms`
+        let url = `/api/hotels/${hotelId}/bookings`
         const queryParams = new URLSearchParams()
       
         // The endpoint accepts "date" as a single parameter for bookings active on the given day.

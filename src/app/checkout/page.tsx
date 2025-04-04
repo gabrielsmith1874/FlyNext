@@ -229,10 +229,12 @@ export default function CheckoutPage() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          ...data,
-          // Include the booking ID from the first pending booking
+          cardNumber: data.cardNumber,
+          cardholderName: data.cardholderName,
+          expiryMonth: data.expiryMonth,
+          expiryYear: data.expiryYear,
+          cvc: data.cvc,
           bookingId: bookings[0].id,
-          // Include passenger and guest details if available
           passengers: passengerInfo ? [passengerInfo] : [],
           hotelGuests: hotelGuestInfo ? [hotelGuestInfo] : []
         })
@@ -245,10 +247,13 @@ export default function CheckoutPage() {
       
       // Clear checkout form data from localStorage
       localStorage.removeItem('checkoutFormData');
+      localStorage.removeItem('passengerDetails');
+      localStorage.removeItem('hotelGuestDetails');
+      
       toast.success('Payment processed successfully!');
       
-      // Redirect to home page instead of /bookings
-      window.location.href = '/';
+      // Redirect to bookings page instead of home page
+      window.location.href = '/my-bookings';
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(error instanceof Error ? error.message : 'Payment failed');
