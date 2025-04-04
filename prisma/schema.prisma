@@ -67,6 +67,7 @@ model FlightBooking {
   status             String
   isConnectingLeg    Boolean  @default(false)
   connectionGroupId  String?
+  passengerDetails   String?
 }
 
 model Booking {
@@ -81,7 +82,7 @@ model Booking {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   flights           FlightBooking[]
-  hotelBookings     HotelBooking[]
+  hotelBookings     HotelBooking[]  
   payment           Payment?
 }
 
@@ -166,9 +167,9 @@ model HotelBooking {
   bookingId     String
   booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   hotelId       String
-  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  hotel         Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   roomId        String
-  room          Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)  // Added onDelete: Cascade
+  room          Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
   checkInDate   DateTime
   checkOutDate  DateTime
   guestCount    Int

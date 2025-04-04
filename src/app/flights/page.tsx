@@ -53,6 +53,7 @@ interface FlightBooking {
     email: string
     type: string
   }>
+  paymentDetails: string
 }
 
 export default function FlightSearch() {
@@ -61,6 +62,7 @@ export default function FlightSearch() {
   const [outboundFlights, setOutboundFlights] = useState<any[]>([])
   const [returnFlights, setReturnFlights] = useState<any[]>([])
   const [airports, setAirports] = useState<any[]>([])
+  const [cities, setCities] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFlights, setSelectedFlights] = useState<any[]>([])
   const [bookingStep, setBookingStep] = useState(0)
@@ -80,21 +82,45 @@ export default function FlightSearch() {
   const [isToFocused, setIsToFocused] = useState(false)
   const fromQuery = watch('from') || ""
   const toQuery = watch('to') || ""
-  const filteredFromAirports = airports.filter((airport: any) =>
-    airport.name.toLowerCase().includes(fromQuery.toLowerCase()) ||
-    airport.code.toLowerCase().includes(fromQuery.toLowerCase())
-  )
-  const filteredToAirports = airports.filter((airport: any) =>
-    airport.name.toLowerCase().includes(toQuery.toLowerCase()) ||
-    airport.code.toLowerCase().includes(toQuery.toLowerCase())
-  )
 
+  // Fetch both cities and airports
   useEffect(() => {
-    fetch('/api/airports')
-      .then(res => res.json())
-      .then(data => setAirports(data))
-      .catch(() => toast.error('Failed to load airports'))
+    const fetchData = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL
+        const [airportsResponse, citiesResponse] = await Promise.all([
+          fetch(`${baseUrl}/api/airports`),
+          fetch(`${baseUrl}/api/cities`)
+        ])
+        const airportsData = await airportsResponse.json()
+        const citiesData = await citiesResponse.json()
+        setAirports(airportsData)
+        setCities(citiesData)
+      } catch (error) {
+        toast.error('Failed to load airports or cities')
+      }
+    }
+    fetchData()
   }, [])
+
+  // Filter airports based on city names or airport codes
+  const filteredFromAirports = airports.filter((airport: any) => {
+    const city = cities.find((c: any) => c.id === airport.cityId)
+    return (
+      airport.name.toLowerCase().includes(fromQuery.toLowerCase()) ||
+      airport.code.toLowerCase().includes(fromQuery.toLowerCase()) ||
+      (city && city.name.toLowerCase().includes(fromQuery.toLowerCase()))
+    )
+  })
+
+  const filteredToAirports = airports.filter((airport: any) => {
+    const city = cities.find((c: any) => c.id === airport.cityId)
+    return (
+      airport.name.toLowerCase().includes(toQuery.toLowerCase()) ||
+      airport.code.toLowerCase().includes(toQuery.toLowerCase()) ||
+      (city && city.name.toLowerCase().includes(toQuery.toLowerCase()))
+    )
+  })
 
   const onSubmit = async (data: FlightSearchForm) => {
     setIsLoading(true)
@@ -155,31 +181,35 @@ export default function FlightSearch() {
 
   const handleBookFlight = async (data: BookingForm) => {
     try {
-      setIsLoading(true)
-      const token = localStorage.getItem('token')
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
       if (!token) {
-        toast.error('Please login first')
-        router.push('/login')
-        return
+        toast.error('Please login first');
+        router.push('/login');
+        return;
       }
 
-      const passenger = data.passengers[0]
-      const bookingData = {
+      // Format all passenger details into an array of passenger objects
+      const passengerDetailsArray = data.passengers.map(passenger => ({
         firstName: passenger.firstName,
         lastName: passenger.lastName,
         email: passenger.email,
         passportNumber: passenger.passportNumber,
-        flightIds: selectedFlights.map(flight => flight.id)
-      }
+        type: 'ADULT' // Default passenger type
+      }));
 
-      const passengerDetails = {
+      // Create the booking data object
+      const bookingData = {
+        flightIds: selectedFlights.map(flight => flight.id),
+        passengerCount: passengerDetailsArray.length,
+        passengerDetails: JSON.stringify(passengerDetailsArray),
+        // Add primary passenger info for user association
         firstName: data.passengers[0].firstName,
         lastName: data.passengers[0].lastName,
         email: data.passengers[0].email,
         passportNumber: data.passengers[0].passportNumber,
       };
-
-      localStorage.setItem('passengerDetails', JSON.stringify(passengerDetails));
+      console.log("Booking data:", bookingData);
 
       const response = await fetch('/api/bookings', {
         method: 'POST',
@@ -188,21 +218,21 @@ export default function FlightSearch() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(bookingData)
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.details || 'Failed to book flight')
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to book flight');
       }
 
-      await response.json()
-      setIsLoading(false)
-      toast.success('Flight booked successfully!')
-      router.push(`/checkout`)
+      await response.json();
+      setIsLoading(false);
+      toast.success('Flight booked successfully!');
+      router.push('/checkout');
     } catch (error) {
-      console.error('Booking error:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to book flight')
-      setIsLoading(false)
+      console.error('Booking error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to book flight');
+      setIsLoading(false);
     }
   }
 
@@ -314,6 +344,12 @@ export default function FlightSearch() {
                               }
                             }}
                             className="custom-day-picker bg-white dark:bg-[rgb(38,64,64)] p-2 rounded-md shadow-md"
+                            style={{
+                              '--rdp-accent-color': '#22c55e', // Change accent color to green
+                              '--rdp-selected-bg': '#15803d',  // Change selected background to green
+                              '--rdp-nav-button-color': '#22c55e', // Change navigation button color to green
+                              '--rdp-nav-button-hover-color': '#15803d' // Change hover color to darker green
+                            } as React.CSSProperties}
                           />
                         )}
                       />
@@ -350,26 +386,15 @@ export default function FlightSearch() {
                               }
                             }}
                             className="custom-day-picker bg-white dark:bg-[rgb(38,64,64)] p-2 rounded-md shadow-md"
+                            style={{
+                              '--rdp-accent-color': '#22c55e', // Change accent color to green
+                              '--rdp-selected-bg': '#15803d',  // Change selected background to green
+                              '--rdp-nav-button-color': '#22c55e', // Change navigation button color to green
+                              '--rdp-nav-button-hover-color': '#15803d' // Change hover color to darker green
+                            } as React.CSSProperties}
                           />
                         )}
                       />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Passengers
-                    </label>
-                    <div className="relative">
-                      <input
-                        {...register('passengers', { required: true, min: 1, max: 9 })}
-                        type="number"
-                        defaultValue={1}
-                        min={1}
-                        max={9}
-                        className="w-full p-3 rounded-md bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                      />
-                      <UserIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
                 </div>

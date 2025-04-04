@@ -56,12 +56,13 @@ export async function POST(request) {
     const body = await request.json();
     // Log the incoming payload to help debug
     console.log("Booking payload:", body);
-    const { firstName, lastName, email, passportNumber, flightIds } = body;
+    const { firstName, lastName, email, passportNumber, flightIds, passengerDetails } = body;
     
     // Validate required fields
     if (!firstName || !lastName || !email || !flightIds || !flightIds.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    console.log("Passenger details:", passengerDetails);
     
     // Use user's stored passport ID if available, otherwise use provided passportNumber
     const finalPassportNumber = user.passportId || passportNumber;
@@ -90,11 +91,13 @@ export async function POST(request) {
     
     let booking;
     if (existingBooking) {
-      // Append new flight bookings and update total price
-      booking = await prisma.booking.update({
-        where: { id: existingBooking.id },
+      // Create a new booking instead of appending to the existing one
+      booking = await prisma.booking.create({
         data: {
-          totalPrice: existingBooking.totalPrice + totalPrice,
+          userId: user.id,
+          bookingReference: generateBookingReference(), // Generate a new booking reference
+          status: 'PENDING',
+          totalPrice,
           flights: {
             create: afsBooking.flights.map(flight => ({
               flightId: flight.id,
@@ -108,11 +111,22 @@ export async function POST(request) {
               currency: flight.currency,
               status: flight.status,
               isConnectingLeg: flight.isConnectingLeg || false,
-              connectionGroupId: flight.connectionGroupId || null
+              connectionGroupId: flight.connectionGroupId || null,
+              passengerDetails: passengerDetails // Add the passenger details
             }))
           }
         },
-        include: { flights: true, hotelBookings: true }
+        include: { flights: true }
+      });
+      console.log("New booking created with a new reference for user ID:", user.id);
+
+      // Send notification for the new booking
+      await prisma.notification.create({
+        data: {
+          userId: user.id,
+          message: `A new booking has been created with reference: ${booking.bookingReference}.`,
+          type: 'NEW_BOOKING_CREATED'
+        }
       });
     } else {
       // Create new booking
@@ -135,11 +149,22 @@ export async function POST(request) {
               currency: flight.currency,
               status: flight.status,
               isConnectingLeg: flight.isConnectingLeg || false,
-              connectionGroupId: flight.connectionGroupId || null
+              connectionGroupId: flight.connectionGroupId || null,
+              passengerDetails: passengerDetails // Add the passenger details
             }))
           }
         },
         include: { flights: true }
+      });
+      console.log("New booking created and flight(s) added to cart for user ID:", user.id);
+
+      // Send notification for adding flight to cart
+      await prisma.notification.create({
+        data: {
+          userId: user.id,
+          message: `New booking created and flight(s) added to your cart.`,
+          type: 'FLIGHT_ADDED_TO_CART'
+        }
       });
     }
     
@@ -147,7 +172,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Booking error:', error);
     return NextResponse.json(
-      { error: 'Booking failed', details: error.message },
+      { error: 'Booking failed', details: (error instanceof Error ? error.message : 'Unknown error') },
       { status: 500 }
     );
   }
@@ -225,7 +250,8 @@ export async function GET(request) {
             currency: true,
             status: true,
             isConnectingLeg: true,
-            connectionGroupId: true
+            connectionGroupId: true,
+            passengerDetails: true // Include passenger details
           }
         },
         hotelBookings: {

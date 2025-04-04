@@ -1,31 +1,47 @@
 import React from 'react';
 import { PaperAirplaneIcon, ArrowLongRightIcon } from '@heroicons/react/24/outline';
 
+// Define interfaces for flight-related data
+interface Location {
+  city?: string;
+  code?: string;
+}
+
+interface Airline {
+  name?: string;
+  code?: string;
+  logo?: string;
+}
+
+interface Flight {
+  airline: Airline | string;
+  flightNumber: string;
+  departureTime: string;
+  arrivalTime: string;
+  origin: Location | string;
+  destination: Location | string;
+  duration: number;
+  price: number;
+}
+
+interface FlightItemProps {
+  flight: Flight;
+  onSelect: (flight: Flight) => void;
+  isSelected?: boolean;
+}
+
 // Helper function to format duration in minutes to "Xhr Ymin"
-function formatDuration(duration) {
+function formatDuration(duration: number): string {
   const hours = Math.floor(duration / 60);
   const minutes = duration % 60;
   return `${hours}hr ${minutes}min`;
 }
 
-/**
- * @typedef {object} FlightItemProps
- * @property {any} flight
- * @property {() => void} onSelect
- * @property {boolean=} isSelected
- */
-
-/**
- * FlightItem component displays the flight details.
- *
- * @param {FlightItemProps} props
- * @returns {JSX.Element | null}
- */
-const FlightItem = ({ flight, onSelect, isSelected = false }) => {
+const FlightItem: React.FC<FlightItemProps> = ({ flight, onSelect, isSelected = false }) => {
   if (!flight) return null;
 
   // Helper function to safely get airline display name
-  const getAirlineDisplay = (airline) => {
+  const getAirlineDisplay = (airline: Airline | string | undefined): string => {
     if (!airline) return 'Unknown Airline';
     if (typeof airline === 'string') return airline;
     return airline.name || airline.code || 'Unknown Airline';
@@ -37,7 +53,7 @@ const FlightItem = ({ flight, onSelect, isSelected = false }) => {
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              {flight.airline?.logo ? (
+              {flight.airline && typeof flight.airline !== 'string' && flight.airline.logo ? (
                 <img src={flight.airline.logo} alt={getAirlineDisplay(flight.airline)} className="w-8 h-8" />
               ) : (
                 <PaperAirplaneIcon className="h-6 w-6 text-primary rotate-45" />
@@ -57,7 +73,9 @@ const FlightItem = ({ flight, onSelect, isSelected = false }) => {
         <div className="flex items-center justify-between">
           <div className="text-center">
             <p className="text-2xl font-bold text-foreground">{flight.departureTime}</p>
-            <p className="text-sm text-muted-foreground">{flight.origin?.city || flight.origin}</p>
+            <p className="text-sm text-muted-foreground">
+              {typeof flight.origin === 'string' ? flight.origin : flight.origin?.city || flight.origin?.code}
+            </p>
           </div>
 
           <div className="flex-1 px-6">
@@ -72,7 +90,11 @@ const FlightItem = ({ flight, onSelect, isSelected = false }) => {
 
           <div className="text-center">
             <p className="text-2xl font-bold text-foreground">{flight.arrivalTime}</p>
-            <p className="text-sm text-muted-foreground">{flight.destination?.city || flight.destination}</p>
+            <p className="text-sm text-muted-foreground">
+              {typeof flight.destination === 'string'
+                ? flight.destination
+                : flight.destination?.city || flight.destination?.code}
+            </p>
           </div>
         </div>
 

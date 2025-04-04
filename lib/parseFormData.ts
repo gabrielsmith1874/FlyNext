@@ -1,8 +1,15 @@
-import formidable from 'formidable';
+import formidable, { Fields, Files } from 'formidable';
 import { join } from 'path';
 import { promises as fs } from 'fs';
 
-export async function parseFormData(request) {
+/**
+ * Parse form data from a request
+ * @param request - Incoming HTTP request
+ * @returns Parsed fields and files
+ */
+export async function parseFormData(
+  request: any
+): Promise<{ fields: Fields; files: Files }> {
   const uploadDir = join(process.cwd(), 'public/uploads');
   await fs.mkdir(uploadDir, { recursive: true });
 

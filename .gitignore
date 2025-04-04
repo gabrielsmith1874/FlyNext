@@ -1,1 +1,9 @@
 *.Zone.Identifier
+
+# Ignore .next and node_modules
+.next
+node_modules
+
+# Ignore afs-main/.next and afs-main/node_modules
+afs-main/.next
+afs-main/node_modules

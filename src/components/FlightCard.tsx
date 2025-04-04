@@ -1,31 +1,64 @@
 import React from 'react';
 import { ArrowLongRightIcon } from '@heroicons/react/24/outline';
 
+// Define interfaces for flight-related data
+interface Location {
+  city?: string;
+  code?: string;
+}
+
+interface Airline {
+  name?: string;
+  code?: string;
+}
+
+interface Segment {
+  id: string | number;
+}
+
+interface Flight {
+  airline: Airline | string;
+  flightNumber: string;
+  departureTime: string;
+  arrivalTime: string;
+  origin: Location | string;
+  destination: Location | string;
+  duration: string | number;
+  price: number;
+  segments?: Segment[];
+}
+
+interface FlightCardProps {
+  flight: Flight;
+  passengerCount: number;
+  showSelectButton?: boolean;
+}
+
 // Helper function to format duration from minutes to "Xhr Ymin"
-function formatDuration(duration) {
+function formatDuration(duration: number): string {
   const hours = Math.floor(duration / 60);
   const minutes = duration % 60;
   return `${hours}hr ${minutes}min`;
 }
 
-const FlightCard = ({ flight, passengerCount, showSelectButton }) => {
+const FlightCard: React.FC<FlightCardProps> = ({ flight, passengerCount, showSelectButton }) => {
   if (!flight) return null;
 
   // Helper function to safely get airline display name
-  const getAirlineDisplay = (airline) => {
+  const getAirlineDisplay = (airline: Airline | string | undefined): string => {
     if (!airline) return 'Unknown Airline';
     if (typeof airline === 'string') return airline;
     return airline.name || airline.code || 'Unknown Airline';
   };
 
   // Helper function to safely get location display
-  const getLocationDisplay = (location) => {
+  const getLocationDisplay = (location: Location | string | undefined): string => {
     if (!location) return 'Unknown Location';
     if (typeof location === 'string') return location;
     return location.city || location.code || 'Unknown Location';
   };
 
-  const formattedDuration = formatDuration(parseInt(flight.duration, 10));
+  const formattedDuration = formatDuration(parseInt(String(flight.duration), 10));
 
   return (
     <div className="mb-8 p-4 bg-muted/50 rounded-lg">

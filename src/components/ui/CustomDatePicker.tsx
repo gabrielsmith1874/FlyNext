@@ -54,8 +54,10 @@ export function CustomDatePicker({ selectedRange, onSelect, disabledDays = [], g
           unavailable: { color: 'grey', background: 'transparent' }
         }}
         style={{
-          '--rdp-accent-color': '#22c55e',
-          '--rdp-selected-bg': '#15803d'
+          '--rdp-accent-color': '#22c55e', // Change accent color to green
+          '--rdp-selected-bg': '#15803d',  // Change selected background to green
+          '--rdp-nav-button-color': '#22c55e', // Change navigation button color to green
+          '--rdp-nav-button-hover-color': '#15803d' // Change hover color to darker green
         } as React.CSSProperties}
       />
     </div>

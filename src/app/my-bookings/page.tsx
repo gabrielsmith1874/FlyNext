@@ -39,6 +39,7 @@ interface Flight {
   status: string;
   isConnectingLeg?: boolean;
   connectionGroupId?: string;
+  passengerDetails?: string;
 }
 
 interface HotelBooking {
@@ -213,6 +214,17 @@ const BookingsPage = () => {
     try {
       const token = localStorage.getItem('token');
 
+      //Get Last name from FlightBookings passengerDetails field
+      const flightBookings = bookingToCancel.flights.filter(flight => flight.flightId);
+      const passengerDetails = flightBookings[0]?.passengerDetails;
+      // convert passengerDetails to JSON
+      console.log('Passenger details:', passengerDetails);
+      const passengerDetailsJSON = passengerDetails ? JSON.parse(passengerDetails) : null;
+      console.log('Passenger details:', passengerDetailsJSON);
+      const lastName = passengerDetailsJSON[0]?.lastName || '';
+      console.log('Passenger last name:', lastName);
+      
+
       // Handle different types of cancellations
       if (cancelType === 'booking') {
         // Cancel entire booking
@@ -225,7 +237,7 @@ const BookingsPage = () => {
           body: JSON.stringify({
             bookingId: bookingToCancel.id,
             bookingReference: bookingToCancel.bookingReference,
-            lastName: 'Smith' // Ideally should come from user profile
+            lastName: lastName
           })
         });
 
@@ -431,15 +443,6 @@ const BookingsPage = () => {
                                 <div className="font-medium">
                                   {formatCurrency(flight.price, flight.currency || 'USD')}
                                 </div>
-                                {booking.status !== 'CANCELLED' && (
-                                  <button
-                                    onClick={() => handleCancelFlight(booking, flight)}
-                                    className="mt-2 text-xs text-red-600 hover:text-red-800 flex items-center"
-                                  >
-                                    <XCircleIcon className="h-4 w-4 mr-1" />
-                                    Cancel flight
-                                  </button>
-                                )}
                               </div>
                             </div>
                           </div>

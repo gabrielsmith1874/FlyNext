@@ -111,29 +111,6 @@ export default function CheckoutPage() {
     }
   }, [setValue])
 
-  // Load saved passenger details and hotel guest details
-  useEffect(() => {
-    // Load passenger details from localStorage
-    try {
-      const savedPassengerDetails = localStorage.getItem('passengerDetails')
-      if (savedPassengerDetails) {
-        const details = JSON.parse(savedPassengerDetails)
-        setPassengerDetails(details)
-        console.log('Loaded passenger details from localStorage:', details)
-      }
-      
-      // Load hotel guest details from localStorage
-      const savedGuestDetails = localStorage.getItem('hotelGuestDetails')
-      if (savedGuestDetails) {
-        const details = JSON.parse(savedGuestDetails)
-        setHotelGuestDetails(details)
-        console.log('Loaded hotel guest details from localStorage:', details)
-      }
-    } catch (e) {
-      console.error('Failed to load guest details from localStorage:', e)
-    }
-  }, [])
-
   // Fetch pending bookings
   useEffect(() => {
     const fetchBookings = async () => {
@@ -165,6 +142,34 @@ export default function CheckoutPage() {
           console.warn('Multiple pending bookings found. Ideally should be only one.')
         }
         
+        // Extract passenger details from the flight bookings if available
+        if (pending.length > 0) {
+          for (const booking of pending) {
+            if (booking.flights && booking.flights.length > 0) {
+              // Try to find a flight with passenger details
+              for (const flight of booking.flights) {
+                if (flight.passengerDetails) {
+                  try {
+                    const details = typeof flight.passengerDetails === 'string' 
+                      ? JSON.parse(flight.passengerDetails) 
+                      : flight.passengerDetails;
+                    
+                    if (details && (Array.isArray(details) ? details.length > 0 : true)) {
+                      setPassengerDetails(details);
+                      console.log('Loaded passenger details from flight booking:', details);
+                      // Store in localStorage as a backup
+                      localStorage.setItem('passengerDetails', JSON.stringify(details));
+                      break; // Exit loop after finding valid passenger details
+                    }
+                  } catch (e) {
+                    console.error('Failed to parse passenger details from flight:', e);
+                  }
+                }
+              }
+            }
+          }
+        }
+        
         setBookings(pending)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load bookings')
@@ -176,7 +181,32 @@ export default function CheckoutPage() {
     fetchBookings()
   }, [])
 
-  // Simplified function to validate card details
+  // Update useEffect for localStorage - make it run after API data has been fetched
+  // and only use localStorage as fallback
+  useEffect(() => {
+    try {
+      // Only load from localStorage if no passenger details were found in bookings
+      if (!passengerDetails) {
+        const savedPassengerDetails = localStorage.getItem('passengerDetails')
+        if (savedPassengerDetails) {
+          const details = JSON.parse(savedPassengerDetails)
+          setPassengerDetails(details)
+          console.log('Loaded passenger details from localStorage as fallback:', details)
+        }
+      }
+      
+      // Load hotel guest details from localStorage (no change to this part)
+      const savedGuestDetails = localStorage.getItem('hotelGuestDetails')
+      if (savedGuestDetails) {
+        const details = JSON.parse(savedGuestDetails)
+        setHotelGuestDetails(details)
+        console.log('Loaded hotel guest details from localStorage:', details)
+      }
+    } catch (e) {
+      console.error('Failed to load guest details from localStorage:', e)
+    }
+  }, [passengerDetails])
+
   const validateCardNumber = (number: string) => {
     const cleaned = number.replace(/\D/g, '')
     return cleaned.length === 16
@@ -201,17 +231,27 @@ export default function CheckoutPage() {
         return;
       }
       
-      // Get passenger details from localStorage
-      let passengerInfo = null;
-      let hotelGuestInfo = null;
+      // Get passenger details from booking data first, fall back to localStorage
+      let passengerInfo = passengerDetails;
+      let hotelGuestInfo = hotelGuestDetails;
       
-      try {
-        const savedPassengerDetails = localStorage.getItem('passengerDetails');
-        if (savedPassengerDetails) {
-          passengerInfo = JSON.parse(savedPassengerDetails);
-          console.log('Including passenger details in checkout:', passengerInfo);
+      // If no passenger details from booking data, try localStorage as fallback
+      if (!passengerInfo) {
+        try {
+          const savedPassengerDetails = localStorage.getItem('passengerDetails');
+          if (savedPassengerDetails) {
+            passengerInfo = JSON.parse(savedPassengerDetails);
+            console.log('Including passenger details from localStorage:', passengerInfo);
+          }
+        } catch (e) {
+          console.error('Failed to parse passenger details from localStorage:', e);
         }
-        
+      } else {
+        console.log('Including passenger details from booking data:', passengerInfo);
+      }
+      
+      // Hotel guest details still from localStorage (unchanged)
+      try {
         const savedGuestDetails = localStorage.getItem('hotelGuestDetails');
         if (savedGuestDetails) {
           hotelGuestInfo = JSON.parse(savedGuestDetails);

@@ -155,4 +155,21 @@ async function post(
   }
 }
 
-export const POST = withAuth(restful(post));
+async function postWithCors(req: any) {
+  const response = await post(req);
+  response.headers.set('Access-Control-Allow-Origin', '*'); // Allow all origins or replace with 'http://localhost:3000'
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
+  return response;
+}
+
+export const POST = withAuth(restful(postWithCors));
+
+// Handle preflight requests
+export const OPTIONS = async () => {
+  const response = new NextResponse(null, { status: 204 });
+  response.headers.set('Access-Control-Allow-Origin', '*'); // Allow all origins or replace with 'http://localhost:3000'
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
+  return response;
+};

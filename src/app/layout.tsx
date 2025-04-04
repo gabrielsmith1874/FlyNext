@@ -1,6 +1,6 @@
 'use client';
 import { useEffect } from 'react';
-import { getToken } from '@/lib/auth-helper';
+import { getToken } from '@/lib/auth-helpers';
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/src/components/theme-provider'
 import { Toaster } from 'react-hot-toast'

@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { comparePassword, generateToken } from '@/lib/auth';
 
-export async function POST(request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
     const body = await request.json();
     const { email, password } = body;
 
-    // Validate required fields
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
@@ -15,12 +14,10 @@ export async function POST(request) {
       );
     }
 
-    // Find user
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
-    // Check if user exists
     if (!user) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
@@ -28,7 +25,6 @@ export async function POST(request) {
       );
     }
 
-    // Verify password
     const isPasswordValid = await comparePassword(password, user.password);
 
     if (!isPasswordValid) {
@@ -38,15 +34,13 @@ export async function POST(request) {
       );
     }
 
-    // Generate token
     const token = generateToken(user);
 
-    // Return user data (excluding password)
     const { password: _, ...userData } = user;
 
     return NextResponse.json({
       user: userData,
-      token
+      token,
     });
   } catch (error) {
     console.error('Login error:', error);

@@ -100,13 +100,13 @@ export default function Profile() {
 
   const onSubmitProfile = async (data: ProfileForm) => {
     try {
-      // Include the profileImage in the data sent to the API
       const updatedData = {
         ...data,
         profilePicture: profileImage || undefined
-      };
+      }
       await updateProfileClient(updatedData)
       toast.success('Profile updated successfully')
+      reset(data) // Reset only the profile form fields
     } catch (error) {
       toast.error('Failed to update profile')
     }
@@ -119,6 +119,7 @@ export default function Profile() {
         newPassword: data.newPassword
       })
       toast.success('Password updated successfully')
+      reset() // Reset only the password form fields
     } catch (error) {
       toast.error('Failed to update password')
     }
@@ -313,6 +314,7 @@ export default function Profile() {
                           value === newPassword || 'The passwords do not match'
                       })}
                       type="password"
+                      defaultValue="" // Explicitly set defaultValue to an empty string
                       className="w-full p-3 rounded-md bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                     />
                     {errors.confirmPassword && (

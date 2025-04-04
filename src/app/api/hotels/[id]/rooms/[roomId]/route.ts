@@ -251,9 +251,8 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    // Extract hotel ID and room ID from params
     const { id: hotelId, roomId } = params;
-    
+
     // Get and verify token
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -280,17 +279,27 @@ export async function DELETE(request, { params }) {
     if (hotel.ownerId !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    
-    // Delete the room
-    await prisma.room.delete({
-      where: { id: roomId }
+
+    // Update the room's status to "CANCELLED" instead of deleting
+    const updatedRoom = await prisma.room.update({
+      where: { id: roomId },
+      data: { availableCount: 0 } // Set availability to 0 to effectively cancel the room
     });
-    
-    return NextResponse.json({ success: true });
+
+    // Cancel all associated bookings
+    await prisma.hotelBooking.updateMany({
+      where: { roomId },
+      data: { status: 'CANCELLED' }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Room availability set to 0 and associated bookings cancelled.'
+    });
   } catch (error) {
     console.error('Delete room error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete room' },
+      { error: 'Failed to cancel room', details: error.message },
       { status: 500 }
     );
   }

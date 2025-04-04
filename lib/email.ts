@@ -1,9 +1,14 @@
 import nodemailer from 'nodemailer';
 
-/**
- * Configure email transporter
- * Using environment variables for security
- */
+interface EmailOptions {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  pdfBuffer: Buffer;
+  filename?: string;
+}
+
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: parseInt(process.env.EMAIL_PORT || '587'),
@@ -16,27 +21,21 @@ const transporter = nodemailer.createTransport({
 
 /**
  * Send an email with PDF invoice attachment
- * @param {Object} options - Email options
- * @param {string} options.to - Recipient email
- * @param {string} options.subject - Email subject
- * @param {string} options.text - Plain text email body
- * @param {string} options.html - HTML email body
- * @param {Buffer} options.pdfBuffer - PDF invoice as buffer
- * @param {string} options.filename - PDF filename
- * @returns {Promise<Object>} - Nodemailer send response
+ * @param options - Email options
+ * @returns Nodemailer send response
  */
-export async function sendInvoiceEmail({ to, subject, text, html, pdfBuffer, filename }) {
+export async function sendInvoiceEmail(options: EmailOptions): Promise<any> {
   try {
     const mailOptions = {
       from: `"FlyNext Travel" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text,
-      html,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
       attachments: [
         {
-          filename: filename || 'invoice.pdf',
-          content: pdfBuffer,
+          filename: options.filename || 'invoice.pdf',
+          content: options.pdfBuffer,
           contentType: 'application/pdf',
         },
       ],

@@ -134,3 +134,51 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+export async function DELETE(request, { params }) {
+  try {
+    const { id: hotelId } = params;
+    const { bookingId } = await request.json();
+
+    // Verify token and ownership
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const user = await verifyToken(token);
+
+    if (!user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: hotelId }
+    });
+
+    if (!hotel || (hotel.ownerId !== user.id && user.role !== 'ADMIN')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Cancel the booking
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: 'CANCELLED' }
+    });
+
+    // Cancel associated hotel bookings
+    await prisma.hotelBooking.updateMany({
+      where: { bookingId },
+      data: { status: 'CANCELLED' }
+    });
+
+    return NextResponse.json({ success: true, message: 'Booking cancelled successfully.' });
+  } catch (error) {
+    console.error('Cancel booking error:', error);
+    return NextResponse.json(
+      { error: 'Failed to cancel booking', details: error.message },
+      { status: 500 }
+    );
+  }
+}

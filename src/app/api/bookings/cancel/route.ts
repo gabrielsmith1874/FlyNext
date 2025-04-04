@@ -64,6 +64,7 @@ export async function POST(request) {
         bookingReference: bookingReference
       })
     });
+    console.log('Cancel Response:', cancelResponse);
 
     if (!cancelResponse.ok) {
       const errorData = await cancelResponse.json().catch(() => ({}));

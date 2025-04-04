@@ -1,8 +1,16 @@
+interface GuestDetails {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  [key: string]: any;
+}
+
 /**
  * Save hotel guest details to localStorage
- * @param {Object} guestDetails - Guest details to save
+ * @param guestDetails - Guest details to save
  */
-export function saveHotelGuestDetails(guestDetails) {
+export function saveHotelGuestDetails(guestDetails: GuestDetails): void {
   try {
     localStorage.setItem('hotelGuestDetails', JSON.stringify(guestDetails));
     console.log('Hotel guest details saved to localStorage:', guestDetails);
@@ -13,9 +21,9 @@ export function saveHotelGuestDetails(guestDetails) {
 
 /**
  * Retrieve hotel guest details from localStorage
- * @returns {Object|null} The parsed guest details or null if not found
+ * @returns The parsed guest details or null if not found
  */
-export function getHotelGuestDetails() {
+export function getHotelGuestDetails(): GuestDetails | null {
   try {
     const details = localStorage.getItem('hotelGuestDetails');
     return details ? JSON.parse(details) : null;

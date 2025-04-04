@@ -19,7 +19,18 @@ async function convertNextRequestToNodeRequest(nextRequest) {
   readable._read = () => {};
   readable.push(Buffer.from(body));
   readable.push(null);
-  return readable;
+
+  // Create a mock Node.js request object with headers
+  const nodeRequest = Object.assign(readable, {
+    headers: {
+      'content-type': nextRequest.headers.get('content-type'),
+      'content-length': body.byteLength.toString(), // Add content-length header
+    },
+    method: nextRequest.method,
+    url: nextRequest.url,
+  });
+
+  return nodeRequest;
 }
 
 export async function GET(request, { params }) {
@@ -143,52 +154,41 @@ export async function PUT(request, context) {
       );
     }
 
-    // Convert and parse the form data
-    const formData = await request.formData();
-    
-    // Extract basic hotel data from form
-    const name = formData.get('name');
-    const description = formData.get('description');
-    const address = formData.get('address');
-    const cityId = formData.get('cityId');
-    const rating = parseFloat(formData.get('rating'));
-    const amenities = formData.get('amenities');
-    const contactEmail = formData.get('contactEmail');
-    const contactPhone = formData.get('contactPhone');
-    
+    // Parse the form data using formidable
+    const form = formidable({ multiples: true, uploadDir: path.join(process.cwd(), 'public', 'uploads', 'hotels'), keepExtensions: true });
+    const nodeRequest = await convertNextRequestToNodeRequest(request);
+
+    const { fields, files } = await new Promise<{ fields: formidable.Fields; files: formidable.Files }>((resolve, reject) => {
+      form.parse(nodeRequest, (err, fields, files) => {
+        if (err) reject(err);
+        else resolve({ fields, files });
+      });
+    });
+
+    // Extract basic hotel data from fields
+    const name = fields.name;
+    const description = fields.description;
+    const address = fields.address;
+    const cityId = fields.cityId;
+    const rating = parseFloat(fields.rating);
+    const amenities = fields.amenities;
+    const contactEmail = fields.contactEmail;
+    const contactPhone = fields.contactPhone;
+
     // Get removed image IDs
-    const removedImageIdsStr = formData.get('removedImageIds');
+    const removedImageIdsStr = fields.removedImageIds;
     const removedImageIds = removedImageIdsStr ? JSON.parse(removedImageIdsStr) : [];
-    
+
     // Handle new images
-    const images = formData.getAll('newImages'); // Updated to match the frontend field name
-    const imageUrls = [];
-    
-    // Process uploaded images
-    for (const img of images) {
-      if (img instanceof File && img.size > 0) {
-        try {
-          // Ensure upload directory exists
-          const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'hotels');
-          await fs.mkdir(uploadsDir, { recursive: true });
-          
-          // Generate unique filename
-          const fileName = `hotel-${id}-${Date.now()}-${img.name}`;
-          const filePath = path.join(uploadsDir, fileName);
-          
-          // Convert File object to buffer and save
-          const arrayBuffer = await img.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          await fs.writeFile(filePath, buffer);
-          
-          // Add to image URLs
-          imageUrls.push(`/uploads/hotels/${fileName}`);
-        } catch (error) {
-          console.error(`Error saving file ${img.name}:`, error);
-        }
+    const imageUrls: string[] = [];
+    if (files.newImages) {
+      const newImages = Array.isArray(files.newImages) ? files.newImages : [files.newImages];
+      for (const img of newImages) {
+        const fileName = path.basename(img.filepath);
+        imageUrls.push(`/uploads/hotels/${fileName}`);
       }
     }
-    
+
     // Update hotel with transaction to handle images
     const updatedHotel = await prisma.$transaction(async (tx) => {
       // 1. Delete removed images
@@ -199,7 +199,7 @@ export async function PUT(request, context) {
           }
         });
       }
-      
+
       // 2. Add new images
       if (imageUrls.length > 0) {
         await tx.hotelImage.createMany({
@@ -209,7 +209,7 @@ export async function PUT(request, context) {
           }))
         });
       }
-      
+
       // 3. Update hotel data
       return tx.hotel.update({
         where: { id },
@@ -229,10 +229,10 @@ export async function PUT(request, context) {
         }
       });
     });
-    
+
     return NextResponse.json(updatedHotel);
   } catch (error) {
     console.error('Error updating hotel:', error);
-    return NextResponse.json({ error: 'Failed to update hotel', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update hotel', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }

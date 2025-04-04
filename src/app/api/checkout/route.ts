@@ -193,59 +193,38 @@ export async function POST(request) {
       if (booking.flights && booking.flights.length > 0) {
         try {
           console.log('Updating flight bookings with passenger information');
-          
-          await Promise.all(booking.flights.map((flight, index) => {
+      
+          await Promise.all(booking.flights.map((flight) => {
             console.log(`Updating flight booking ID: ${flight.id} with passenger details`);
-            
-            // Get passenger details for this specific flight based on index
-            const passenger = passengers && passengers.length > 0 ? passengers[0] : {};
-            
-            // Prioritize data from the passengers array
-            const passengerFirstName = passenger.firstName || firstName || user.firstName || 'Guest';
-            const passengerLastName = passenger.lastName || lastName || user.lastName || 'Traveler';
-            
-            console.log(`Passenger name: ${passengerFirstName} ${passengerLastName}`);
-            
-            // Create passenger details object with fallbacks to ensure non-empty values
-            const passengerDetails = {
-              firstName: passengerFirstName,
-              lastName: passengerLastName,
-              email: email || user.email || '',
-              phone: phone || user.phone || '',
-              passportNumber: passportNumber || user.passportId || '', 
-              dateOfBirth: user.dateOfBirth || '',
-              nationality: user.nationality || '',
-              specialRequests: specialRequests || ''
-            };
-            
-            console.log('Passenger details to be saved:', JSON.stringify(passengerDetails));
-            
-            // Extract existing passenger details if they exist
-            let existingStatus = flight.status || 'CONFIRMED';
-            let updatedStatus;
-            
-            if (flight.status && flight.status.includes(':PASSENGER_DATA:')) {
-              // Status already has passenger data, replace it
-              const baseStatus = flight.status.split(':PASSENGER_DATA:')[0];
-              updatedStatus = `${baseStatus}:PASSENGER_DATA:${JSON.stringify(passengerDetails)}`;
-              console.log('Updating existing passenger data');
-            } else {
-              // Add new passenger data
-              updatedStatus = `${existingStatus}:PASSENGER_DATA:${JSON.stringify(passengerDetails)}`;
-              console.log('Adding new passenger data');
-            }
-            
-            console.log(`Updated status will be: ${updatedStatus.substring(0, 50)}...`);
-            
+      
+            // Map over the passengers array to create passenger details for each passenger
+            const passengerDetailsArray = passengers.map((passenger, index) => {
+              const passengerFirstName = passenger.firstName || firstName || user.firstName || `Guest ${index + 1}`;
+              const passengerLastName = passenger.lastName || lastName || user.lastName || `Traveler ${index + 1}`;
+              
+              return {
+                firstName: passengerFirstName,
+                lastName: passengerLastName,
+                email: passenger.email || email || user.email || '',
+                phone: passenger.phone || phone || user.phone || '',
+                passportNumber: passenger.passportNumber || passportNumber || user.passportId || '',
+                dateOfBirth: passenger.dateOfBirth || user.dateOfBirth || '',
+                nationality: passenger.nationality || user.nationality || '',
+                specialRequests: passenger.specialRequests || specialRequests || ''
+              };
+            });
+
+            // Update the status to only "SCHEDULED"
+            let updatedStatus = 'SCHEDULED';
+            console.log('Updated status will be:', updatedStatus);
+
             return prisma.flightBooking.update({
               where: { id: flight.id },
               data: {
-                status: updatedStatus
+                status: updatedStatus,
               }
             });
           }));
-          
-          console.log('Flight bookings updated successfully with passenger information');
         } catch (flightUpdateError) {
           console.error('Failed to update flight passenger details:', flightUpdateError);
           // Continue with checkout even if updates fail

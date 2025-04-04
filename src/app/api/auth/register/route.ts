@@ -11,53 +11,56 @@ const registerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   passportId: z.string().length(9, 'Passport ID must be exactly 9 characters'),
   phone: z.string().optional(),
-  role: z.enum(['USER', 'HOTEL_OWNER', 'ADMIN']).optional().default('USER')
+  role: z.enum(['USER', 'HOTEL_OWNER', 'ADMIN']).optional().default('USER'),
 });
 
-export async function POST(request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
     const body = await request.json();
-    
+
     // Validate request body against schema
     const validatedData = registerSchema.parse(body);
-    
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email }
+      where: { email: validatedData.email },
     });
-    
+
     if (existingUser) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 409 }
       );
     }
-    
+
     // Hash password
     const hashedPassword = await hashPassword(validatedData.password);
-    
+
     // Create user with role set to HOTEL_OWNER
     const user = await prisma.user.create({
       data: {
         ...validatedData,
         password: hashedPassword,
-        role: 'HOTEL_OWNER' // Force role to HOTEL_OWNER
-      }
+        role: 'HOTEL_OWNER', // Force role to HOTEL_OWNER
+      },
     });
-    
+
     // Generate token
     const token = generateToken(user);
-    
+
     // Return user data (excluding password)
     const { password: _, ...userData } = user;
-    
-    return NextResponse.json({
-      user: userData,
-      token
-    }, { status: 201 });
+
+    return NextResponse.json(
+      {
+        user: userData,
+        token,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -65,7 +68,7 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Registration failed' },
       { status: 500 }
